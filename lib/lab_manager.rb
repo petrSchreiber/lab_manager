@@ -1,3 +1,5 @@
+$: << 'app/models'
+
 require 'logger'
 
 module LabManager
@@ -7,7 +9,7 @@ module LabManager
     end
 
     def root
-      File.expandpath('../..', '__FILE___')
+      File.expand_path('..', '__FILE__')
     end
 
     def env
@@ -27,3 +29,4 @@ end
 
 
 require 'lab_manager/config'
+require 'lab_manager/database'

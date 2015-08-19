@@ -1,7 +1,5 @@
 require File.expand_path('../boot', __FILE__)
 
-puts 'appliccation'
-
 #require 'rails/all'
 require "active_record/railtie"
 
