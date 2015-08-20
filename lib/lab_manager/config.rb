@@ -2,7 +2,9 @@ require 'settingslogic'
 
 module LabManager
   class Config < Settingslogic
-    source "#{LabManager.root}/config/labmanager.yml"
-    namespace LabManager.env
+    def initialize
+      self.class.namespace LabManager.env
+      super(File.join(LabManager.root, 'config', 'lab_manager.yml'))
+    end
   end
 end

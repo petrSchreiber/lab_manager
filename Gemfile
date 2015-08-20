@@ -7,7 +7,12 @@ gem 'activesupport',    '4.2.3'
 gem 'activerecord',     '4.2.3'
 gem 'annotate',         '~> 2.6.10'
 
-gem "settingslogic", '~> 2.0.9'
+gem "settingslogic",    '~> 2.0.9'
+
+gem 'sentry-raven',     '~> 0.13.3'
+gem 'metriks',          '~> 0.9.9'
+
+gem 'connection_pool',  '~> 2.2.0'
 
 gem 'rbvmomi',          '~> 1.8.2'
 gem 'fog',              '~> 1.33.0'

@@ -1,0 +1,8 @@
+development:
+  username: 'cz\username'
+  password: my_favourite_password
+  server: example.com
+  expected_pubkey_hash: 11112222333344444455556666777788889990000aaabbbcccdddeeeeeffffff
+
+  pool: 3
+  timeout: 6

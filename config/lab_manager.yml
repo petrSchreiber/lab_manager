@@ -1,0 +1,15 @@
+default: &default
+  log_level: <%= Logger::WARN %>
+  sentry_dsn:
+  graphite:
+
+development:
+  <<: *default
+  log_level: <%= Logger::DEBUG %>
+
+test:
+  <<: *default
+  log_level: <%= Logger::INFO %>
+
+production:
+  <<: *default
