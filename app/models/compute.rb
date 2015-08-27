@@ -14,38 +14,69 @@
 #
 
 class Compute < ActiveRecord::Base
-  has_one   :provider, polymorphic: true
+
+  ALIVE_STATES = %w(created queued pending running rebooting stopping stopped shutting-down poweron poweroff)
+  DEAD_STATES = %w(terminated errored)
+
+  #has_one   :provider, as: :providerable
   #has_many :snapshots, dependant: destroy
 
   validates :image, :provider, presence: true
-  validates :state, inclusion: { in: %w(pending running rebooting stopping stopped shutting-downn terminated) }
+  validates :state, inclusion: { in: %w(
+   created queued pending running
+   rebooting stopping stopped shutting-downn
+   terminated errored) }
 
-  #asi ne: delegate :run, :terinate, :shutdown, :poweron, :poweroff, to: :provider
 
-  #state :created
-  #state :queued       #put to the sidekiq queue (scheduler decided to run)
-  #state :pending_run  #sidekiq job start to process it, ...or Provider start to process it.
-  #state :run
-  #
-  #state :pending_terminate
-  #state :terminate
-  #
-  #state :pending_shutdown
-  #state :shutdown
-  #
-  #state :pending_poweron
-  #state :poweron
-  #
-  #state :pending_poweroff
-  #state :poweroff
+  #include ActiveModel::Transitions
 
-  def as_json
-    #TODO ...merge with specific provider items?
+  #state_machine do
+  #  state :created    # first one is initial state; just created item in DB
+  #  state :queued     # scheduled to background job
+  #  state :received   # backgound job starts processing
+  #  state :pending    # REDUNDANT? sets imedialtelly before fog strarts prepare machine
+  #  state :running    # fog starts the VM
+
+  #  state :rebooting
+  #  state :stopping
+  #  state :stopped
+  #  state :shuttingdown
+
+  #  state :powering_off # ??
+  #  state :powering_on  # ??
+
+  #  state :terminated
+  #  state :errored
+
+  #  event :enqueue { transition to: :queued, from: :created, on_transition: :enqueue }
+  #  event :receive { transition to: :received, from: :queued }
+  #  event :pending { transition to: :pending, from: [:received, :enqueued] }
+  #  event :running { transition to: :running, from: [:pending] }
+
+  #  event :reboot { transition to: :rebooting, from: :running }
+  #  event :rebooted { transition to: :rebooting, from: :running }
+
+  #  event :powering_off { transition to: :powering_off, from: [:pending, :running] }
+  #  event :powered_off { transition to: :stopped, from: [:powering_off, :running] }
+
+
+  #  event :powering_on { transition to: :powering_on, from: [:stopped] }
+  #  event :powered_on { transition to: :running, from: [:powering_on, :stopped] }
+  #end
+
+
+  scope :alive, -> { where(state: ALIVE_STATES) }
+  scope :dead,  -> { where(state: ALIVE_STATES) }
+
+
+  ##
+
+  def enqueue(data = {})
+    LabManager.logger.info("Enqueuing compute id:#{id}")
+    provider.enqueue(data)
   end
 
-  def run(opts)
-
-  end
+  ##
 
   def terminate
   end
@@ -53,9 +84,20 @@ class Compute < ActiveRecord::Base
   def shutdown
   end
 
-  def poweron
+  def power_on
   end
 
-  def poweroff
+  def power_off
+  end
+
+  def reboot
+  end
+
+  def execute(command:, password:, user:)
+  end
+
+
+  def ip
+    ips.first
   end
 end

@@ -19,9 +19,18 @@ gem 'fog',              '~> 1.33.0'
 
 gem 'sqlite3'   #TODO will be 'pg'
 
+gem 'sinatra',          '~> 1.4.6'
+gem 'sinatra-contrib',  '~> 1.4.6'
+gem 'rack-contrib',     '~> 1.4.0'
+gem 'rack-parser',      '~> 0.6.1', :require => 'rack/parser'
+gem 'multi_json',       '~> 1.0'
+
+
 group :development do
   #just for cmd, e.g.: rails g model, rails c, rails db
   gem 'rails', '4.2.3', require: false
+
+  gem 'rerun'
 end
 
 group :development, :test do

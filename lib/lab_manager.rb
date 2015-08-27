@@ -4,6 +4,8 @@ require 'logger'
 require 'lab_manager/config'
 require 'lab_manager/database'
 
+require 'lab_manager/models'
+
 module LabManager
   class << self
     def config
@@ -22,19 +24,27 @@ module LabManager
       @logger ||= Logger.new(STDOUT)
     end
 
+    # NOTE: logger= has to be called _before_ setup
+    # because subsystem loggers (Raven, Sidekiq) are setup
+    # in #setup method
+    #
     def logger=(l)
       @logger = l
     end
 
     def setup
+      raise 'setup was already done' if defined?(@config)
+      #return if defined?(@config)
+
       logger.level = config.log_level || Logger::WARN
 
       if config.sentry_dsn
+        # rake raven:test[https://public:secret@app.getsentry.com/3825]
         ::Raven.configure do |config|
+          config.logger = Labmanager.logger
           config.dsn = LabManager.config.sentry_dsn
-          config.environments = %w[ production ]
           config.current_environment = LabManager.env
-          config.excluded_exceptions = %w{Siatra::NotFound}
+          config.excluded_exceptions = %w{Sinatra::NotFound}
         end
       end
 
