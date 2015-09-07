@@ -20,7 +20,7 @@ gem 'fog',              '~> 1.33.0'
 gem 'pg'
 
 gem 'sinatra',          '~> 1.4.6'
-gem 'sinatra-contrib',  '~> 1.4.6'
+gem 'sinatra-contrib',  '~> 1.4.6', require: false #see http://stackoverflow.com/a/20642616/1045752
 gem 'rack-contrib',     '~> 1.4.0'
 gem 'rack-parser',      '~> 0.6.1', :require => 'rack/parser'
 gem 'multi_json',       '~> 1.0'
