@@ -17,7 +17,7 @@ gem 'connection_pool',  '~> 2.2.0'
 gem 'rbvmomi',          '~> 1.8.2'
 gem 'fog',              '~> 1.33.0'
 
-gem 'sqlite3'   #TODO will be 'pg'
+gem 'pg'
 
 gem 'sinatra',          '~> 1.4.6'
 gem 'sinatra-contrib',  '~> 1.4.6'
