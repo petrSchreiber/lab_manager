@@ -7,6 +7,8 @@ class CreateComputes < ActiveRecord::Migration
       t.string :provider
       t.text :user_data
       t.text :ips
+      t.text :create_vm_options
+      t.text :provider_data
 
       t.timestamps null: false
     end

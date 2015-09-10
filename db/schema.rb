@@ -18,6 +18,7 @@ ActiveRecord::Schema.define(version: 20150909130531) do
 
   create_table "actions", force: :cascade do |t|
     t.integer  "compute_id"
+    t.string   "command",     default: "",       null: false
     t.string   "status",      default: "queued"
     t.text     "reason"
     t.text     "payload"
@@ -34,8 +35,10 @@ ActiveRecord::Schema.define(version: 20150909130531) do
     t.string   "provider"
     t.text     "user_data"
     t.text     "ips"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.text     "create_vm_options"
+    t.text     "provider_data"
+    t.datetime "created_at",        null: false
+    t.datetime "updated_at",        null: false
   end
 
 end

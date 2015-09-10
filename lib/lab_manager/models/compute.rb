@@ -2,15 +2,17 @@
 #
 # Table name: computes
 #
-#  id         :integer          not null, primary key
-#  name       :string
-#  state      :string
-#  image      :string
-#  provider   :string
-#  user_data  :text
-#  ips        :text
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+#  id                :integer          not null, primary key
+#  name              :string
+#  state             :string
+#  image             :string
+#  provider          :string
+#  user_data         :text
+#  ips               :text
+#  create_vm_options :text
+#  provider_data     :text
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
 #
 
 require 'active_support/core_ext/module/delegation'
@@ -33,6 +35,9 @@ class Compute < ActiveRecord::Base
    shutting_down powered_off powering_on
    suspending suspended resuming reverting
    terminating terminated errored) }
+
+  serialize :create_vm_options
+  serialize :provider_data
 
 =begin
   delegate :terminate,
@@ -110,6 +115,10 @@ class Compute < ActiveRecord::Base
   scope :alive, -> { where(state: ALIVE_STATES) }
   scope :dead,  -> { where(state: DEAD_STATES) }
 
+
+  def provider
+    @provider ||= "::Providers::#{provider.to_s.camelize}".constantize.new(self)
+  end
 
   ##
 
