@@ -2,10 +2,14 @@ default: &default
   log_level: <%= Logger::WARN %>
   sentry_dsn:
   graphite:
+  providers:
+    - v_sphere
+    - static_machine
 
 development:
   <<: *default
   log_level: <%= Logger::DEBUG %>
+
 
 test:
   <<: *default
@@ -13,3 +17,4 @@ test:
 
 production:
   <<: *default
+

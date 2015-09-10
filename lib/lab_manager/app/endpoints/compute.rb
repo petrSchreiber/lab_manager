@@ -38,7 +38,7 @@ module LabManager::App::Endpoints
 
     put '/:id/power_off' do
       compute = ::Compute.find(params[:id])
-      compute.poweron.to_json
+      compute.poweroff.to_json
     end
 
     put '/:id/shutdown' do

@@ -1,5 +1,7 @@
-$: << 'app/models'
 
 module LabManager::Models
-  require 'compute'
+  require 'lab_manager/models/compute'
+  require 'lab_manager/models/action'
+  require 'lab_manager/models/vsphere'
 end
+

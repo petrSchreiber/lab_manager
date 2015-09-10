@@ -4,8 +4,6 @@ require 'logger'
 require 'lab_manager/config'
 require 'lab_manager/database'
 
-require 'lab_manager/models'
-
 module LabManager
   class << self
     def config
@@ -59,7 +57,17 @@ module LabManager
 
 
       Database.connect
+
+      init_providers
     end
+
+    private
+      def init_providers
+
+      end
 
   end
 end
+
+require 'lab_manager/models'
+
