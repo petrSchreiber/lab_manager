@@ -4,5 +4,8 @@ development:
   server: example.com
   expected_pubkey_hash: 11112222333344444455556666777788889990000aaabbbcccdddeeeeeffffff
 
-  pool: 3
-  timeout: 6
+  connection_pool:
+    size: 3
+    timeout: 6
+  scheduler:
+    max_vm: 10

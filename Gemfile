@@ -18,6 +18,7 @@ gem 'rbvmomi',          '~> 1.8.2'
 gem 'fog',              '~> 1.33.0'
 
 gem 'pg'
+gem 'aasm',             '~> 4.2.0'
 
 gem 'sinatra',          '~> 1.4.6'
 gem 'sinatra-contrib',  '~> 1.4.6', require: false #see http://stackoverflow.com/a/20642616/1045752
