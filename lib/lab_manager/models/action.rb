@@ -4,7 +4,7 @@
 #
 #  id          :integer          not null, primary key
 #  compute_id  :integer
-#  status      :string
+#  status      :string           default("queued")
 #  reason      :text
 #  payload     :text
 #  pending_at  :datetime
@@ -16,13 +16,17 @@
 require 'aasm'
 
 class Action < ActiveRecord::Base
-  validates :status, inclusion: { in: %w(in_progress finished errored)}
 
-  incluse AASM
+  belongs_to :compute, inverse_of: :actions
+
+  validates :status, inclusion: { in: %w(queued pending success failed)}
+
+  include AASM
 
   aasm no_direct_assignment: :true, column: :state do
-    state :in_progress, initial: :true
-    state :finished
-    state :errored
+    state :queued, initial: :true
+    state :pending
+    state :success
+    state :failed
   end
 end

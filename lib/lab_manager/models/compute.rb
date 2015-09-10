@@ -19,13 +19,13 @@ require 'aasm'
 
 class Compute < ActiveRecord::Base
 
-  ALIVE_STATES = %w(created provisioning running
-  rebooting shutting_down powered_off
-  powering_on suspending suspended resuming reverting)
+  ALIVE_STATES = %w(created provisioning running rebooting shutting_down
+    powered_off powering_on suspending suspended resuming reverting)
   DEAD_STATES = %w(terminating terminated errored)
 
+  has_many :actions, dependent: :destroy, inverse_of: :compute
   #has_one   :provider, as: :providerable
-  #has_many :snapshots, dependant: destroy
+  #has_many :snapshots, dependent: destroy
 
   validates :image, :provider, presence: true
   validates :state, inclusion: { in: %w(

@@ -2,7 +2,7 @@ class CreateActions < ActiveRecord::Migration
   def change
     create_table :actions do |t|
       t.references :compute
-      t.string :status
+      t.string :status, default: 'queued'
       t.text :reason
       t.text :payload
       t.datetime :pending_at

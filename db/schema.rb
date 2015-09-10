@@ -18,13 +18,13 @@ ActiveRecord::Schema.define(version: 20150909130531) do
 
   create_table "actions", force: :cascade do |t|
     t.integer  "compute_id"
-    t.string   "status"
+    t.string   "status",      default: "queued"
     t.text     "reason"
     t.text     "payload"
     t.datetime "pending_at"
     t.datetime "finished_at"
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
   end
 
   create_table "computes", force: :cascade do |t|
