@@ -1,4 +1,4 @@
-[![GitHub license](https://raw.githubusercontent.com/AVGTechnologies/lab_manager/master/license-apache-2.svg)](https://github.com/AVGTechnologies/lab_manager/blob/master/LICENSE)
+[![License](license-apache-2.svg)](https://github.com/AVGTechnologies/lab_manager/blob/master/LICENSE)
 
 Lab Manager
 ===========
