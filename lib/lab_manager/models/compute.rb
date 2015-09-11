@@ -6,7 +6,7 @@
 #  name              :string
 #  state             :string
 #  image             :string
-#  provider          :string
+#  provider_name     :string
 #  user_data         :text
 #  ips               :text
 #  create_vm_options :text
@@ -18,40 +18,37 @@
 require 'active_support/core_ext/module/delegation'
 require 'aasm'
 
-
 class Compute < ActiveRecord::Base
-
   ALIVE_STATES = %w(created provisioning running rebooting shutting_down
-    powered_off powering_on suspending suspended resuming reverting)
+                    powered_off powering_on suspending suspended resuming reverting)
   DEAD_STATES = %w(terminating terminated errored)
+  ACTION_PENDING_STATES = ALIVE_STATES - %w(running stopped powered_off)
 
   has_many :actions, dependent: :destroy, inverse_of: :compute
-  #has_one   :provider, as: :providerable
-  #has_many :snapshots, dependent: destroy
+  # has_one   :provider, as: :providerable
+  # has_many :snapshots, dependent: destroy
 
   validates :image, :provider, presence: true
   validates :state, inclusion: { in: %w(
-   created provisioning running rebooting
-   shutting_down powered_off powering_on
-   suspending suspended resuming reverting
-   terminating terminated errored) }
+    created provisioning running rebooting
+    shutting_down powered_off powering_on
+    suspending suspended resuming reverting
+    terminating terminated errored) }
 
   serialize :create_vm_options
   serialize :provider_data
 
-=begin
   delegate :terminate,
            :power_off,
            :power_on,
            :reboot,
            :shutdown,
-           :execute, to: :provider
-=end
+           :execute, to: :provider_inst
 
   include AASM
 
   aasm no_direct_assignment: :true, column: :state do
-    state :created, :initial => true
+    state :created, initial: true
     state :queued
     state :provisioning
     state :running
@@ -89,13 +86,10 @@ class Compute < ActiveRecord::Base
     event :revert        do transitions from: :running,        to: :reverting     end
     event :reverted      do transitions from: :reverting,      to: :running       end
 
-
     event :take_snapshot do
-
-                            transitions from: :running,        to: :running
-                            transitions from: :suspended,      to: :suspended
-                            transitions from: :powered_off,    to: :powered_off
-
+      transitions from: :running, to: :running
+      transitions from: :suspended,      to: :suspended
+      transitions from: :powered_off,    to: :powered_off
     end
 
     event :exec_script   do transitions from: :running,        to: :running       end
@@ -103,36 +97,46 @@ class Compute < ActiveRecord::Base
     event :terminated    do transitions from: :terminating,    to: :terminated    end
 
     event :terminate     do
-
-                            transitions from: [:created, :queued,
-                                               :received, :running,
-                                               :suspended,
-                                               :powered_off],  to: :terminating
+      transitions from: [:created, :queued,
+                         :received, :running,
+                         :suspended,
+                         :powered_off], to: :terminating
     end
 
+    event :fatal_error do
+      transitions from: [:created, :queued,
+                         :received, :running,
+                         :suspended, :pending,
+                         :powered_off], to: :errored
+    end
   end
 
   scope :alive, -> { where(state: ALIVE_STATES) }
   scope :dead,  -> { where(state: DEAD_STATES) }
 
+  # after_commit :create_initial_action, on: :create
 
   def provider
-    @provider ||= "::Providers::#{provider.to_s.camelize}".constantize.new(self)
+    @provider ||= "::Providers::#{provider_name.to_s.camelize}".constantize.new(self)
+  end
+
+  def dead_state?
+    DEAD_STATES.include?(state)
   end
 
   ##
 
-  #def enqueue(data = {})
+  # def enqueue(data = {})
   #  LabManager.logger.info("Enqueueing compute id:#{id}")
   #  provider.enqueue(data)
-  #end
+  # end
 
   ##
 
-  #def execute(command:, password:, user:)
-  #end
+  # def execute(command:, password:, user:)
+  # end
 
-  #def ip
+  # def ip
   #  ips.first
-  #end
+  # end
 end

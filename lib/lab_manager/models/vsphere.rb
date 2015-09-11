@@ -4,10 +4,12 @@ require 'connection_pool'
 
 module Providers
   class VSphere
-
     class << self
       def connect
-        @vspehre ||= ConnectionPool.new(size: VSphereConfig.connection_pool.size, timeout: VSphereConfig.connection_pool.timeout) do
+        @vspehre ||= ConnectionPool.new(
+          size: VSphereConfig.connection_pool.size,
+          timeout: VSphereConfig.connection_pool.timeout
+        ) do
           Fog::Compute.new(
             provider: :vsphere,
             vsphere_username: VSphereConfig.username,
@@ -19,14 +21,12 @@ module Providers
       end
 
       def filter_machines_to_be_scheduled(
-            queued_machines:  Compute.queued.where(provider: self.to_s),
-            alive_machines: Compute.alive.where(provider: self.to_s).order(:created_at)
+            queued_machines: Compute.queued.where(provider: to_s),
+            alive_machines: Compute.alive.where(provider: to_s).order(:created_at)
       )
-        queued.machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].map)
+        queued_machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].map)
       end
-
     end
-
 
     attr_accessor :compute
 
@@ -38,8 +38,7 @@ module Providers
       compute.create_vm_options
     end
 
-
-    # TODO what parameters are mandatory?
+    # TODO: what parameters are mandatory?
     # whould be nice to be able to validate before sendting a request
 
     def run
@@ -64,8 +63,5 @@ module Providers
       # e.g: 'LabManager/%{repoitory}s/%{tsd}s' % opts[:lm_meta]
       opts[:dest_folder_formatter] % opts.merge(opts[:lm_meta])
     end
-
-
   end
 end
-

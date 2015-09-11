@@ -6,7 +6,7 @@ module LabManager
       source ||= File.join(LabManager.root, 'config', 'lab_manager.yml')
 
       self.class.namespace LabManager.env
-      super(File.join(LabManager.root, 'config', 'lab_manager.yml'))
+      super(source, section)
     end
   end
 end
