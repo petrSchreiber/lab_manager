@@ -24,7 +24,7 @@ describe Compute do
     end
   end
 
- context 'when new machine deletion is received' do
+  context 'when new machine deletion is received' do
     it 'creates delete action'
   end
 
@@ -34,5 +34,4 @@ describe Compute do
       expect(compute.actions.count).to eq 10
     end
   end
-
- end
+end

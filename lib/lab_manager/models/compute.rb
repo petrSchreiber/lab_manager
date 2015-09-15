@@ -18,6 +18,7 @@
 require 'active_support/core_ext/module/delegation'
 require 'aasm'
 
+# model representing a virtual machine
 class Compute < ActiveRecord::Base
   ALIVE_STATES = %w(created provisioning running rebooting shutting_down
                     powered_off powering_on suspending suspended resuming reverting)

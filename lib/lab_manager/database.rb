@@ -1,6 +1,7 @@
 require 'active_record'
 
 module LabManager
+  # main database configuration and initialization
   module Database
     class << self
       def config

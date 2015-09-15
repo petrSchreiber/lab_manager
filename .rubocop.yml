@@ -20,3 +20,6 @@ Style/Documentation:
   Enabled: true
   Exclude:
     - 'config/application.rb'
+    - 'db/migrate/20150819122640_create_computes.rb'
+    - 'db/migrate/20150909130531_create_actions.rb'
+    - 'lib/lab_manager/models.rb'

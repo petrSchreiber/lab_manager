@@ -3,6 +3,7 @@ require 'lab_manager/app/endpoints/base'
 module LabManager
   module App
     module Endpoints
+      # handles all endpoints related to Computes
       class Compute < Base
         get '/' do
           # state = params[:state]

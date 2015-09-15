@@ -1,8 +1,9 @@
 require 'multi_json'
 
 module LabManager
-  class App
+  module App
     module Endpoints
+      # base REST api service class
       class Base < Sinatra::Base
         # see https://github.com/bmizerany/sinatra-activerecord/pull/10
         # http://tenderlovemaking.com/2011/10/20/connection-management-in-activerecord.html
