@@ -15,15 +15,10 @@ module LabManager
 
     def perform(action_id)
       action = Actions.find(action_id).with_lock!('FOR UPDATE NOWAIT') do
-        if action.state != :queued
-          LabManager.logger.error "Action 'id'=#{action.id} has state=#{action.state}),'\
-        ' expected :pending. Aborting."
-          return
-        end
         @compute = Compute.find(id: action.compute_id)
         if compute.dead_state?
-          LabManager.logger.error "Compute 'id'=#{compute.id} is dead.'\
-        ' Cannot accept action: #{action.command}"
+          LabManager.logger.error "Compute 'id'=#{compute.id} is dead." \
+            " Cannot accept action: #{action.command}"
           return
         end
         case action.command # measurement of stop.action before and after this case
@@ -38,16 +33,22 @@ module LabManager
         when 'take_snapshot'
         when 'execute_script'
         else
-          fail LabManager::UnknownAction, 'action with \'id\'=#{action_id}'\
-          ' has unknown \'command\': #{action.command.inspect}'
+          fail LabManager::UnknownAction, 'action with \'id\'=#{action_id}' \
+            ' has unknown \'command\': #{action.command.inspect}'
         end
       end
     end
 
     def create_vm(c, a)
+      if action.state != :queued
+        LabManager.logger.error "Action 'id'=#{action.id} has state=#{action.state})," \
+          " expected :pending. Aborting."
+        return
+      end
+
       lock { c.provision! }
       begin
-        c.provider.provision
+        c.create_vm(a.payload)
         lock(:provisioning) { c.run }
         a.action_succeeded!
       rescue => e

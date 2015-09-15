@@ -26,7 +26,7 @@ module Provider
       @compute = compute
     end
 
-    def run(machine)
+    def create_vm(machine)
       occupied_by = Compute
         .alive
         .where(provider_name: 'static_machine')

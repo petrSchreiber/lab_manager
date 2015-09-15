@@ -42,8 +42,8 @@ module Provider
     # TODO: what parameters are mandatory?
     # whould be nice to be able to validate before sendting a request
 
-    def run
-      opts = create_vm_options.reverse_merge(VSphereConfig.run_default_opts)
+    def create_vm(opts)
+      opts = opts.reverse_merge(VSphereConfig.run_default_opts)
       VSphere.connect.with do |vs|
         vs.vm_clone(
           'datacenter'    => opts[:datacenter],

@@ -42,12 +42,13 @@ class Compute < ActiveRecord::Base
   serialize :create_vm_options
   serialize :provider_data
 
-  delegate :terminate,
+  delegate :create_vm,
+           :terminate,
            :power_off,
            :power_on,
            :reboot,
            :shutdown,
-           :execute, to: :provider_inst
+           :execute, to: :provider
 
   include AASM
 
