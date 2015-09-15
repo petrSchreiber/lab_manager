@@ -107,12 +107,8 @@ class Compute < ActiveRecord::Base
                          :powered_off], to: :terminating
     end
 
-    event :fatal_error do
-      transitions from: [:created, :queued,
-                         :received, :running,
-                         :suspended, :pending,
-                         :powered_off], to: :errored
-    end
+    event :fatal_error   do transitions                        to: :errored       end
+
   end
 
   scope :alive, -> { where(state: ALIVE_STATES) }
