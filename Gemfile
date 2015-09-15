@@ -40,5 +40,6 @@ group :development, :test do
 end
 
 group :test do
-  gem 'factory_girl', '~> 4.0'
+  gem 'database_cleaner',   '~> 1.5'
+  gem 'factory_girl',       '~> 4.0'
 end

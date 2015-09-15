@@ -1,8 +1,12 @@
 $LOAD_PATH << 'lib'
+
 require 'rspec'
-require 'lab_manager'
+require 'database_cleaner'
 require 'factory_girl'
 require 'factories'
+
+require 'lab_manager'
+
 
 LabManager.setup
 LabManager.logger.level = Logger::INFO
@@ -15,4 +19,19 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.before(:each) do |example|
+    DatabaseCleaner.strategy = example.metadata[:sidekiq] ? :truncation : :transaction
+    DatabaseCleaner.start
+  end
+
+  config.after(:each) do
+    DatabaseCleaner.clean
+  end
+
 end

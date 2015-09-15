@@ -26,7 +26,7 @@ describe LabManager::Config do
     end
   end
 
-  it "automatically schedule events when action is created" do
+  it "automatically schedule events when action is created", sidekiq: true do
     expect do
       create(:action)
     end.to change(LabManager::ActionWorker.jobs, :size).by(1)
