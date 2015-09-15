@@ -20,9 +20,12 @@ require 'aasm'
 
 # model representing a virtual machine
 class Compute < ActiveRecord::Base
+
+  # state `terminating` is also alive (e.g. it is counted to the occupied resources)
   ALIVE_STATES = %w(created provisioning running rebooting shutting_down
-                    powered_off powering_on suspending suspended resuming reverting)
-  DEAD_STATES = %w(terminating terminated errored)
+                    powered_off powering_on suspending suspended resuming 
+                    reverting terminating)
+  DEAD_STATES = %w(terminated errored)
   ACTION_PENDING_STATES = ALIVE_STATES - %w(running stopped powered_off)
 
   has_many :actions, dependent: :destroy, inverse_of: :compute
@@ -118,7 +121,7 @@ class Compute < ActiveRecord::Base
   # after_commit :create_initial_action, on: :create
 
   def provider
-    @provider ||= "::Providers::#{provider_name.to_s.camelize}".constantize.new(self)
+    @provider ||= "::Provider::#{provider_name.to_s.camelize}".constantize.new(self)
   end
 
   def dead_state?

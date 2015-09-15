@@ -18,6 +18,12 @@ describe LabManager::Config do
       expect(action.pending).to be true
       expect(action.succeeded).to be true
     end
+
+    it "chage attribute state raises exception" do
+      expect do
+        build(:action).state = :pending
+      end.to raise_exception(AASM::NoDirectAssignmentError)
+    end
   end
 
   it "automatically schedule events when action is created" do

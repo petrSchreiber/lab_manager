@@ -1,8 +1,8 @@
 require 'fog'
-require 'lab_manager/models/vsphere_config'
+require 'lab_manager/provider/vsphere_config'
 require 'connection_pool'
 
-module Providers
+module Provider
   # VSphere provider implementation
   class VSphere
     class << self
@@ -22,10 +22,10 @@ module Providers
       end
 
       def filter_machines_to_be_scheduled(
-            queued_machines: Compute.queued.where(provider: to_s),
-            alive_machines: Compute.alive.where(provider: to_s).order(:created_at)
+            queued_machines: Compute.queued.where(provider_name: 'v_sphere'),
+            alive_machines: Compute.alive.where(provider_name: 'v_sphere').order(:created_at)
       )
-        queued_machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].map)
+        queued_machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].max)
       end
     end
 

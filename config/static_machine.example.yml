@@ -1,0 +1,21 @@
+default: &default
+  machines: []
+
+development:
+  <<: *default
+  machines:
+    static1:
+      ip: 10.5.0.1
+      user: vagrant
+      password: vagrant
+    static2:
+      ip: 10.5.0.2
+      user: vagrant
+      password: vagrant
+
+
+test:
+  <<: *default
+
+production:
+  <<: *default

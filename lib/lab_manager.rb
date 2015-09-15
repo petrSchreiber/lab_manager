@@ -76,3 +76,4 @@ module LabManager
 end
 
 require 'lab_manager/models'
+require 'lab_manager/providers'
