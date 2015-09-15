@@ -6,6 +6,7 @@ require 'lab_manager/database'
 require 'sidekiq'
 require 'sidekiq/redis_connection'
 
+# main application module
 module LabManager
   class << self
     def config

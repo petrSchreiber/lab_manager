@@ -1,6 +1,7 @@
 require 'settingslogic'
 
 module LabManager
+  # settings of labmanager application
   class Config < Settingslogic
     def initialize(source = nil, section = nil)
       source ||= File.join(LabManager.root, 'config', 'lab_manager.yml')

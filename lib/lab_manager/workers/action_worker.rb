@@ -1,6 +1,7 @@
 
 
 module LabManager
+  # Sidekiq background job for computes manipulation
   class ActionWorker
     include Sidekiq::Worker
 

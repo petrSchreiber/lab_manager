@@ -17,6 +17,7 @@
 
 require 'aasm'
 
+# Action model, it is used as the store of actions which were dispatched to a compute
 class Action < ActiveRecord::Base
   DONE_STATES = %w(success failed)
   TODO_STATES = %(queued)

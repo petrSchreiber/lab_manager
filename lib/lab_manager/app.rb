@@ -7,6 +7,7 @@ require 'lab_manager/app/endpoints/uptime'
 require 'lab_manager/app/endpoints/compute'
 
 module LabManager
+  # base rest service class
   class App
     attr_reader :app
 

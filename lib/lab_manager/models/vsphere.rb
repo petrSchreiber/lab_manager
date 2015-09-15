@@ -3,6 +3,7 @@ require 'lab_manager/models/vsphere_config'
 require 'connection_pool'
 
 module Providers
+  # VSphere provider implementation
   class VSphere
     class << self
       def connect
