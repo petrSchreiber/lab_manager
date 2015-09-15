@@ -16,6 +16,7 @@
 #
 
 require 'aasm'
+require 'lab_manager/workers/action_worker'
 
 # Action model, it is used as the store of actions which were dispatched to a compute
 class Action < ActiveRecord::Base
@@ -37,6 +38,8 @@ class Action < ActiveRecord::Base
 
   serialize :payload
 
+  after_commit :schedule_action, :on => :create
+
   include AASM
 
   aasm no_direct_assignment: :true, column: :state do
@@ -46,11 +49,17 @@ class Action < ActiveRecord::Base
     state :failed
 
     event :pending   do transitions from: :queued, to: :pending end
-    event :succedded do transitions from: :pending, to: :succeded end
+    event :succeeded do transitions from: :pending, to: :success end
     event :failed    do transitions from: :pending, to: :failed   end
   end
 
   scope :done, -> { where(state: DONE_STATES) }
   scope :todo, -> { where(state: TODO_STATES) }
   scope :failed, -> { where(state: FAIL_STATES) }
+
+  def schedule_action
+    LabManager.logger.debug "Scheduling action id=#{self.id}"
+    LabManager::ActionWorker.perform_async(self.id)
+  end
+
 end

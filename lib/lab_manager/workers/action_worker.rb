@@ -1,4 +1,4 @@
-
+require 'sidekiq'
 
 module LabManager
   # Sidekiq background job for computes manipulation
