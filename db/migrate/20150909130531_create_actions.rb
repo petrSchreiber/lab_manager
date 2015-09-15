@@ -3,9 +3,10 @@ class CreateActions < ActiveRecord::Migration
     create_table :actions do |t|
       t.references :compute
       t.string :command,      default: '', null: false
-      t.string :status,       default: 'queued'
+      t.string :state,        default: 'queued', null: false
       t.text :reason
       t.text :payload
+      t.string :job_id
       t.datetime :pending_at
       t.datetime :finished_at
 

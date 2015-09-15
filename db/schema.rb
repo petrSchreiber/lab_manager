@@ -11,34 +11,33 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150909130531) do
-
+ActiveRecord::Schema.define(version: 20_150_909_130_531) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension 'plpgsql'
 
-  create_table "actions", force: :cascade do |t|
-    t.integer  "compute_id"
-    t.string   "command",     default: "",       null: false
-    t.string   "status",      default: "queued"
-    t.text     "reason"
-    t.text     "payload"
-    t.datetime "pending_at"
-    t.datetime "finished_at"
-    t.datetime "created_at",                     null: false
-    t.datetime "updated_at",                     null: false
+  create_table 'actions', force: :cascade do |t|
+    t.integer 'compute_id'
+    t.string 'command',     default: '', null: false
+    t.string 'state',       default: 'queued'
+    t.text 'reason'
+    t.text 'payload'
+    t.string 'job_id'
+    t.datetime 'pending_at'
+    t.datetime 'finished_at'
+    t.datetime 'created_at',                     null: false
+    t.datetime 'updated_at',                     null: false
   end
 
-  create_table "computes", force: :cascade do |t|
-    t.string   "name"
-    t.string   "state"
-    t.string   "image"
-    t.string   "provider"
-    t.text     "user_data"
-    t.text     "ips"
-    t.text     "create_vm_options"
-    t.text     "provider_data"
-    t.datetime "created_at",        null: false
-    t.datetime "updated_at",        null: false
+  create_table 'computes', force: :cascade do |t|
+    t.string 'name'
+    t.string 'state'
+    t.string 'image'
+    t.string 'provider_name'
+    t.text 'user_data'
+    t.text 'ips'
+    t.text 'create_vm_options'
+    t.text 'provider_data'
+    t.datetime 'created_at',        null: false
+    t.datetime 'updated_at',        null: false
   end
-
 end

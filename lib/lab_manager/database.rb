@@ -3,7 +3,6 @@ require 'active_record'
 module LabManager
   module Database
     class << self
-
       def config
         YAML.load(File.read(File.join(LabManager.root, 'config', 'database.yml')))
       end
@@ -17,4 +16,3 @@ module LabManager
     end
   end
 end
-

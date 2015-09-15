@@ -1,8 +1,10 @@
-$: << 'app/models' #TODO move models to lib directory
 
 require 'logger'
 require 'lab_manager/config'
 require 'lab_manager/database'
+
+require 'sidekiq'
+require 'sidekiq/redis_connection'
 
 module LabManager
   class << self
@@ -26,13 +28,11 @@ module LabManager
     # because subsystem loggers (Raven, Sidekiq) are setup
     # in #setup method
     #
-    def logger=(l)
-      @logger = l
-    end
+    attr_writer :logger
 
     def setup
-      raise 'setup was already done' if defined?(@config)
-      #return if defined?(@config)
+      fail 'setup was already done' if defined?(@config)
+      # return if defined?(@config)
 
       logger.level = config.log_level || Logger::WARN
 
@@ -42,7 +42,7 @@ module LabManager
           config.logger = Labmanager.logger
           config.dsn = LabManager.config.sentry_dsn
           config.current_environment = LabManager.env
-          config.excluded_exceptions = %w{Sinatra::NotFound}
+          config.excluded_exceptions = %w(Sinatra::NotFound)
         end
       end
 
@@ -55,19 +55,16 @@ module LabManager
         reporter.start
       end
 
-
       Database.connect
 
-      init_providers
+      Sidekiq.logger = LabManager.logger
+      Sidekiq.redis = Sidekiq::RedisConnection.create(
+        url: LabManager.config[:redis]['url'],
+        namespace: 'lab_manager',
+        size: LabManager.config[:redis]['pool']
+      )
     end
-
-    private
-      def init_providers
-
-      end
-
   end
 end
 
 require 'lab_manager/models'
-

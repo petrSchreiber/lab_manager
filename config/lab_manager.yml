@@ -5,6 +5,11 @@ default: &default
   providers:
     - v_sphere
     - static_machine
+  redis:
+    url: redis://localhost:6379
+    pool: 3
+  scheduler:
+    sleep_time: 2
 
 development:
   <<: *default

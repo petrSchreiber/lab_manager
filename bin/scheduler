@@ -1,19 +1,23 @@
 #!/bin/ruby
 
-$: << 'lib'
+$LOAD_PATH << 'lib'
 require 'bundler/setup'
 require 'lab_manager'
+require 'lab_manager/sidekiq/alive_jobs'
 
 LabManager.setup
 
 loop do
   LabManager.config.providers.each do |provider|
     provider_class = "::Providers::#{provider.to_s.camelize}".constantize
-    provider_class.send("filter_machines_to_be_scheduled", queued_machines: Compute.alive.where(provider: provider)).each do |machine|
-      #sidekiq perform_async each machine
+    provider_class.send(
+      'filter_machines_to_be_scheduled',
+      queued_machines: Compute.alive.where(provider: provider)
+    ).each do |machine|
+      action = Action.find(machine.id).to_do.order(:created_at).first
+      LabManager::BackgroundJobs.perform_async(action.id)
     end
   end
 
-  sleep 5
+  sleep LabManager.config.scheduler.sleep_time
 end
-

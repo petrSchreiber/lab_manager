@@ -4,7 +4,7 @@ class CreateComputes < ActiveRecord::Migration
       t.string :name
       t.string :state
       t.string :image
-      t.string :provider
+      t.string :provider_name
       t.text :user_data
       t.text :ips
       t.text :create_vm_options
