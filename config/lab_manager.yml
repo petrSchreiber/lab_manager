@@ -7,7 +7,8 @@ default: &default
     - static_machine
   redis:
     url: redis://localhost:6379
-    pool: 3
+    size: 3
+    namespace: lab_manager
   scheduler:
     sleep_time: 2
 

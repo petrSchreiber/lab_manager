@@ -2,9 +2,9 @@
 require 'logger'
 require 'lab_manager/config'
 require 'lab_manager/database'
+require 'lab_manager/workers/action_worker'
 
 require 'sidekiq'
-require 'sidekiq/redis_connection'
 
 # main application module
 module LabManager
@@ -59,11 +59,14 @@ module LabManager
       Database.connect
 
       Sidekiq.logger = LabManager.logger
-      Sidekiq.redis = Sidekiq::RedisConnection.create(
-        url: LabManager.config[:redis]['url'],
-        namespace: 'lab_manager',
-        size: LabManager.config[:redis]['pool']
-      )
+
+      Sidekiq.configure_server do |config|
+          config.redis = LabManager.config.redis
+      end
+
+      Sidekiq.configure_client do |config|
+          config.redis = LabManager.config.redis
+      end
     end
   end
 end
