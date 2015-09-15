@@ -7,6 +7,10 @@ require 'lab_manager/workers/action_worker'
 require 'sidekiq'
 
 # main application module
+
+#TODO: Make some initializers folder for this kind of settings?
+ActiveRecord::Base.raise_in_transactional_callbacks = true
+
 module LabManager
   class << self
     def config
