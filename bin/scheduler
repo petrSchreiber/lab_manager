@@ -17,10 +17,7 @@ loop do
   LabManager.config.providers.each do |provider|
     provider_class = "::Provider::#{provider.to_s.camelize}".constantize
 
-    schedule_computes = provider_class.send(
-      :filter_machines_to_be_scheduled,
-      queued_machines: Compute.alive.where(provider_name: provider)
-    )
+    schedule_computes = provider_class.send(:filter_machines_to_be_scheduled)
 
     LabManager.logger.info "Provider #{provider.inspect} scheduling " \
       "machines ids=#{schedule_computes.pluck(:id)}" unless schedule_computes.empty?

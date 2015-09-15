@@ -23,7 +23,7 @@ module Provider
 
       def filter_machines_to_be_scheduled(
             queued_machines: Compute.queued.where(provider_name: 'v_sphere'),
-            alive_machines: Compute.alive.where(provider_name: 'v_sphere').order(:created_at)
+            alive_machines: Compute.alive_vm.where(provider_name: 'v_sphere').order(:created_at)
       )
         queued_machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].max)
       end

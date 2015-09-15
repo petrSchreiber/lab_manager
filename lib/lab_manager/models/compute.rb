@@ -22,9 +22,10 @@ require 'aasm'
 class Compute < ActiveRecord::Base
 
   # state `terminating` is also alive (e.g. it is counted to the occupied resources)
-  ALIVE_STATES = %w(created provisioning running rebooting shutting_down
-                    powered_off powering_on suspending suspended resuming 
+  ALIVE_STATES = %w(created queued provisioning running rebooting shutting_down
+                    powered_off powering_on suspending suspended resuming
                     reverting terminating)
+  ALIVE_VM_STATES = ALIVE_STATES - %w(created queued)
   DEAD_STATES = %w(terminated errored)
   ACTION_PENDING_STATES = ALIVE_STATES - %w(running stopped powered_off)
 
@@ -112,8 +113,9 @@ class Compute < ActiveRecord::Base
 
   end
 
-  scope :alive, -> { where(state: ALIVE_STATES) }
-  scope :dead,  -> { where(state: DEAD_STATES) }
+  scope :alive,     -> { where(state: ALIVE_STATES) }
+  scope :alive_vm,  -> { where(state: ALIVE_VM_STATES) }
+  scope :dead,      -> { where(state: DEAD_STATES) }
 
   # after_commit :create_initial_action, on: :create
 

@@ -9,11 +9,18 @@ module Provider
   # Off course, there shoud be only one instance running
   #
   class StaticMachine
+
+    class MachineInUse < RuntimeError
+    end
+
+    class NotFound < RuntimeError
+    end
+
     class << self
 
       def filter_machines_to_be_scheduled(
         queued_machines: Compute.queued.where(provider_name: 'static_machine'),
-        alive_machines: Compute.alive.where(provider_name: 'static_machine').order(:created_at)
+        alive_machines: Compute.alive_vm.where(provider_name: 'static_machine').order(:created_at)
       )
         free_machines = StaticMachineConfig.machines.keys - alive_machines.pluck(:name)
         queued_machines.where(name: free_machines)
@@ -27,13 +34,23 @@ module Provider
     end
 
     def create_vm(machine)
+      machine_config = StaticMachineConfig.machines[compute.name]
+      unless machine_config
+        raise NotFound, "Static machine name=#{compute.name.inspect} " \
+          "asked for compute id=#{compute.id} does not exists"
+      end
+
       occupied_by = Compute
-        .alive
+        .alive_vm
         .where(provider_name: 'static_machine')
-        .where('id <> ?', self)
-      raise MachineOccupied, "Machine id=#{compute.id} "
-        "name=#{compute.name.inspect} is occupyied machine "
-        "id=#{occupied_by.pluck(:id).inspect}" if occupied_by.count != 0
+        .where(name: compute.name)
+        #.where('computes.id <> ?', self.compute.id)
+
+      if occupied_by.present?
+        raise MachineInUse, "Machine id=#{compute.id} " \
+          "name=#{compute.name.inspect} is occupyied by machine " \
+          "ids=#{occupied_by.pluck(:id).inspect}"
+      end
     end
 
   end
