@@ -7,7 +7,6 @@ require 'factories'
 
 require 'lab_manager'
 
-
 LabManager.setup
 LabManager.logger.level = Logger::INFO
 
@@ -33,5 +32,4 @@ RSpec.configure do |config|
   config.after(:each) do
     DatabaseCleaner.clean
   end
-
 end

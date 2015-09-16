@@ -9,7 +9,7 @@ LabManager.setup
 
 def schedule_create_vm!(compute)
   compute.with_lock do
-    compute.actions.build(command: :create_vm, payload:create_vm_options)
+    compute.actions.build(command: :create_vm, payload: create_vm_options)
     compute.enqueue
     compute.save!
   end
