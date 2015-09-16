@@ -80,8 +80,8 @@ module LabManager
     def lock(previous_state: nil)
       compute.with_lock('FOR UPDATE') do
         if previous_state && (previous_state != c.state)
-          fail StateChanged, "state has changed to'\
-        ' #{c.state.inspect}, expected #{previous_state.inspect}"
+          fail StateChanged, "state has changed to #{c.state.inspect}, " \
+            "expected #{previous_state.inspect}"
         end
         yield
       end

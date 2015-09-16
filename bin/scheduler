@@ -8,7 +8,11 @@ require 'lab_manager/workers/action_worker'
 LabManager.setup
 
 def schedule_create_vm!(compute)
-  compute.actions.create!(command: :create_vm, payload:create_vm_options)
+  compute.with_lock do
+    compute.actions.build(command: :create_vm, payload:create_vm_options)
+    compute.enqueue
+    compute.save!
+  end
 rescue => err
   LabManager.logger.error("Cannot create action `create_vm`: #{err}")
 end

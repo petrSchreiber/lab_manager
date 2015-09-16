@@ -19,11 +19,11 @@ module Provider
     class << self
 
       def filter_machines_to_be_scheduled(
-        queued_machines: Compute.queued.where(provider_name: 'static_machine'),
+        created_machines: Compute.created.where(provider_name: 'static_machine'),
         alive_machines: Compute.alive_vm.where(provider_name: 'static_machine').order(:created_at)
       )
         free_machines = StaticMachineConfig.machines.keys - alive_machines.pluck(:name)
-        queued_machines.where(name: free_machines)
+        created_machines.where(name: free_machines)
       end
     end
 
