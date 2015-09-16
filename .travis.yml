@@ -2,7 +2,7 @@ language: ruby
 rvm:
   - "2.2.2"
 
-sudo: true
+sudo: false
 cache: bundler
 
 before_script: |
