@@ -33,8 +33,8 @@ module LabManager
         when 'power_on'
         when 'take_snapshot'
         when 'execute_script'
-        when 'terminate'
-          terminate
+        when 'terminate_vm'
+          terminate_vm
         else
           fail LabManager::UnknownAction, 'action with \'id\'=#{action_id}' \
             ' has unknown \'command\': #{action.command.inspect}'
@@ -46,7 +46,7 @@ module LabManager
       lock { compute.provisioning! }
       begin
         compute.create_vm(action.payload)
-        lock(:provisioning) { compute.run }
+        lock(:provisioning) { compute.run! }
         action.succeeded!
       rescue => e
         action.failed
@@ -57,18 +57,18 @@ module LabManager
       end
     end
 
-    def terminate
-      lock { compute.terminate }
+    def terminate_vm
+      lock { compute.terminate! }
       begin
-        compute.provider.terminate
+        compute.terminate_vm(action.payload)
+        lock(:terminating) { compute.terminated! }
         action.succeeded!
       rescue => e
         action.failed
         action.reason = e.to_s
         action.save!
+        lock { compute.fatal_error! }
         raise
-      ensure
-        lock { compute.terminated }
       end
     end
 

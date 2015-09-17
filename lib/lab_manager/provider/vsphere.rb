@@ -42,7 +42,7 @@ module Provider
     # TODO: what parameters are mandatory?
     # whould be nice to be able to validate before sendting a request
 
-    def create_vm(opts)
+    def create_vm(opts = {})
       opts = opts.reverse_merge(VSphereConfig.run_default_opts)
       VSphere.connect.with do |vs|
         vs.vm_clone(
@@ -55,6 +55,10 @@ module Provider
           'dest_folder'   => compute.dest_folder || default_dest_folder(opts)
         )
       end
+    end
+
+    def terminate_vm(opts = {})
+      fail 'Not implemented yet'
     end
 
     private

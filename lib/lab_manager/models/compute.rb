@@ -43,7 +43,7 @@ class Compute < ActiveRecord::Base
   serialize :provider_data
 
   delegate :create_vm,
-           :terminate,
+           :terminate_vm,
            :power_off,
            :power_on,
            :reboot,

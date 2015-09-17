@@ -51,25 +51,43 @@ describe LabManager::ActionWorker do
   end
 
   context 'when create_vm action is requested' do
-    it 'calls create_vm method of vmware provider object' do
+    it 'calls create_vm method of compute object' do
       action = compute.actions.create!(command: :create_vm)
-      expect_any_instance_of(::Provider::VSphere).to receive(:create_vm)
+      expect_any_instance_of(::Compute).to receive(:create_vm)
       compute.enqueue
       compute.save!
       action_worker.perform(action.id)
     end
-  end
 
-  context 'when terminate action is requested' do
-    it 'calls terminate method of vmware provider object' do
+    it 'ends up in running state if provider throws no exception' do
       compute.enqueue!
       action = compute.actions.create!(command: :create_vm)
-      ::Provider::VSphere.any_instance.stub(:create_vm).and_return(true)
+      allow_any_instance_of(::Compute).to receive(:create_vm) { true }
       action_worker.perform(action.id)
-      p action.state
-      p compute.state
-      action = compute.actions.create!(command: :terminate)
+      compute.reload
+      expect(compute.state).to eq('running')
+      action.reload
+      expect(action.state).to eq('success')
+    end
 
+    it 'ends up in errored state if provider throws an exception' do
+      compute.enqueue!
+      action = compute.actions.create!(command: :create_vm)
+      allow_any_instance_of(::Compute).to receive(:create_vm) { fail 'foo' }
+      expect do
+        action_worker.perform(action.id)
+      end.to raise_error(RuntimeError)
+    end
+  end
+
+  context 'when terminate_vm action is requested' do
+    it 'calls terminate_vm method of compute object' do
+      compute.enqueue!
+      action = compute.actions.create!(command: :create_vm)
+      allow_any_instance_of(::Compute).to receive(:create_vm)
+      action_worker.perform(action.id)
+      action = compute.actions.create!(command: :terminate_vm)
+      expect_any_instance_of(::Compute).to receive(:terminate_vm)
       action_worker.perform(action.id)
     end
   end

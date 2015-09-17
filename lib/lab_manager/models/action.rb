@@ -29,7 +29,7 @@ class Action < ActiveRecord::Base
   # TODO: create_vm - is it usefull?
   validates :command,
             inclusion: { in: %w(create_vm suspend shut_down reboot revert resume power_on
-                                take_snapshot execute_script terminate) },
+                                take_snapshot execute_script terminate_vm) },
             presence: true
 
   validates :state,
