@@ -20,7 +20,6 @@ require 'aasm'
 
 # model representing a virtual machine
 class Compute < ActiveRecord::Base
-
   # state `terminating` is also alive (e.g. it is counted to the occupied resources)
   ALIVE_STATES = %w(created queued provisioning running rebooting shutting_down
                     powered_off powering_on suspending suspended resuming
@@ -34,11 +33,11 @@ class Compute < ActiveRecord::Base
   # has_many :snapshots, dependent: destroy
 
   validates :image, :provider, presence: true
-  validates :state, inclusion: { in: %w(
+  validates :state, inclusion: { in: (%w(
     created provisioning running rebooting
     shutting_down powered_off powering_on
     suspending suspended resuming reverting
-    terminating terminated errored) }
+    terminating terminated errored queued)) }
 
   serialize :create_vm_options
   serialize :provider_data
@@ -110,7 +109,6 @@ class Compute < ActiveRecord::Base
     end
 
     event :fatal_error   do transitions                        to: :errored       end
-
   end
 
   scope :alive,     -> { where(state: ALIVE_STATES) }

@@ -38,7 +38,7 @@ class Action < ActiveRecord::Base
 
   serialize :payload
 
-  after_commit :schedule_action, :on => :create
+  after_commit :schedule_action, on: :create
 
   include AASM
 
@@ -61,5 +61,4 @@ class Action < ActiveRecord::Base
     LabManager.logger.debug "Scheduling action id=#{self.id}"
     LabManager::ActionWorker.perform_async(self.id)
   end
-
 end

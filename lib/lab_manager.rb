@@ -8,9 +8,10 @@ require 'sidekiq'
 
 # main application module
 
-#TODO: Make some initializers folder for this kind of settings?
+# TODO: Make some initializers folder for this kind of settings?
 ActiveRecord::Base.raise_in_transactional_callbacks = true
 
+# main application module
 module LabManager
   class << self
     def config
@@ -65,11 +66,11 @@ module LabManager
       Sidekiq.logger = LabManager.logger
 
       Sidekiq.configure_server do |config|
-          config.redis = LabManager.config.redis
+        config.redis = LabManager.config.redis
       end
 
       Sidekiq.configure_client do |config|
-          config.redis = LabManager.config.redis
+        config.redis = LabManager.config.redis
       end
     end
   end

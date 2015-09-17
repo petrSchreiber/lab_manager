@@ -2,13 +2,13 @@ Metrics/AbcSize:
     Max: 42
 
 Metrics/CyclomaticComplexity:
-  Max: 12
+  Max: 13
 
 Metrics/LineLength:
   Max: 100
 
 Metrics/MethodLength:
-  Max: 30
+  Max: 36
 
 Style/BlockDelimiters:
   Enabled: true
@@ -23,3 +23,17 @@ Style/Documentation:
     - 'db/migrate/20150819122640_create_computes.rb'
     - 'db/migrate/20150909130531_create_actions.rb'
     - 'lib/lab_manager/models.rb'
+Style/ExtraSpacing:
+  Description: 'Do not use unnecessary spacing.'
+  Enabled: false
+Style/RedundantSelf:
+  Exclude:
+    - 'lib/lab_manager/models/action.rb'
+
+SingleSpaceBeforeFirstArg:
+  Exclude:
+    - 'lib/lab_manager/models/compute.rb'
+
+AllCops:
+  Exclude:
+    - 'db/schema.rb'
