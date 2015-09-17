@@ -59,4 +59,19 @@ describe LabManager::ActionWorker do
       action_worker.perform(action.id)
     end
   end
+
+  context 'when terminate action is requested' do
+    it 'calls terminate method of vmware provider object' do
+      compute.enqueue!
+      action = compute.actions.create!(command: :create_vm)
+      ::Provider::VSphere.any_instance.stub(:create_vm).and_return(true)
+      action_worker.perform(action.id)
+      p action.state
+      p compute.state
+      action = compute.actions.create!(command: :terminate)
+
+      action_worker.perform(action.id)
+    end
+  end
+
 end

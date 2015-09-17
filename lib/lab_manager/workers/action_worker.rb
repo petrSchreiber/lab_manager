@@ -33,6 +33,8 @@ module LabManager
         when 'power_on'
         when 'take_snapshot'
         when 'execute_script'
+        when 'terminate'
+          terminate
         else
           fail LabManager::UnknownAction, 'action with \'id\'=#{action_id}' \
             ' has unknown \'command\': #{action.command.inspect}'

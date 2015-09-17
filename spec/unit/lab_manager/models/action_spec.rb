@@ -3,7 +3,7 @@ require 'sidekiq/testing'
 
 describe Action do
   describe 'states trasition' do
-    it 'default statet is queued' do
+    it 'default state is queued' do
       expect(build(:action).state).to eq 'queued'
     end
 
