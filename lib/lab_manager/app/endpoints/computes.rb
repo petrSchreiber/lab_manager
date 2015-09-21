@@ -1,14 +1,14 @@
 require 'lab_manager/app/endpoints/base'
 
 module LabManager
-  module App
+  class App
     module Endpoints
       # handles all endpoints related to Computes
       class Compute < Base
         get '/' do
           # state = params[:state]
           scope = ::Compute.all
-          %w(state name provider).each do |filter_key|
+          %w(state name provider_name).each do |filter_key|
             value = params[filter_key]
             # TODO: is it safe? Have I check class to String || Array of Strings?
             # probably better solution would be use runsack
@@ -23,38 +23,50 @@ module LabManager
         end
 
         post '/' do
+          provider_name = params['provider_name']
+          unless LabManager.config.providers.include?(provider_name)
+            halt 422, { message: 'Uknown provider!' }.to_json
+            return
+          end
           ::Compute.create(params).to_json
         end
 
         delete '/:id' do
-          ::Compute.find(params[:id]).schedule_destroy.to_json
+          compute = ::Compute.find(params[:id])
+          compute.actions.create!(command: :terminate_vm).to_json
         end
 
         # actions
 
         put '/:id/power_on' do
           compute = ::Compute.find(params[:id])
-          compute.poweron.to_json
+          compute.actions.create!(command: :power_on).to_json
         end
 
         put '/:id/power_off' do
           compute = ::Compute.find(params[:id])
-          compute.poweroff.to_json
+          compute.actions.create!(command: :power_off).to_json
         end
 
         put '/:id/shutdown' do
           compute = ::Compute.find(params[:id])
-          compute.shutdown.to_json
+          compute.actions.create!(command: :shutdown).to_json
         end
 
         put '/:id/reboot' do
           compute = ::Compute.find(params[:id])
-          compute.reboot.to_json
+          compute.actions.create!(
+            command: :reboot,
+            payload: { type: (params[:type] || 'managed') }
+          ).to_json
         end
 
         put '/:id/execute' do
           compute = ::Compute.find(params[:id])
-          compute.execute(parmas.slice(:command, :user, :password)).to_json
+          compute.actions.create!(
+            command: :execute,
+            payload: parmas.slice(:command, :user, :password)
+          ).to_json
         end
 
         # Snapshots
@@ -71,6 +83,7 @@ module LabManager
 
         get '/:compute_id/snapshots/:id/revert' do
         end
+
       end
     end
   end

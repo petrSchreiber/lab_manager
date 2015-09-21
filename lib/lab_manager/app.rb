@@ -1,10 +1,11 @@
-require 'sinatra/base'
+require 'rack'
 require 'rack/parser'
+require 'sinatra/base'
 require 'multi_json'
 
 require 'lab_manager/app/endpoints/base'
 require 'lab_manager/app/endpoints/uptime'
-require 'lab_manager/app/endpoints/compute'
+require 'lab_manager/app/endpoints/computes'
 
 module LabManager
   # base rest service class
@@ -12,8 +13,6 @@ module LabManager
     attr_reader :app
 
     def initialize
-      LabManager.setup
-
       @app = Rack::Builder.app do
         use Raven::Rack
         use ActiveRecord::ConnectionAdapters::ConnectionManagement

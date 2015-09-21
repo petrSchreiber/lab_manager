@@ -20,6 +20,10 @@ require 'aasm'
 
 # model representing a virtual machine
 class Compute < ActiveRecord::Base
+
+  class CannotDeleteAliveVM < RuntimeError
+  end
+
   # state `terminating` is also alive (e.g. it is counted to the occupied resources)
   ALIVE_STATES = %w(created queued provisioning running rebooting shutting_down
                     powered_off powering_on suspending suspended resuming
@@ -121,21 +125,23 @@ class Compute < ActiveRecord::Base
     @provider ||= "::Provider::#{provider_name.to_s.camelize}".constantize.new(self)
   end
 
-  def dead_state?
+  def alive_vm?
+    ALIVE_VM_STATES.include(state)
+  end
+
+  def alive?
+    ALIVE_STATES.include(state)
+  end
+
+  def dead?
     DEAD_STATES.include?(state)
   end
 
-  ##
-
-  # def enqueue(data = {})
-  #  LabManager.logger.info("Enqueueing compute id:#{id}")
-  #  provider.enqueue(data)
-  # end
-
-  ##
-
-  # def execute(command:, password:, user:)
-  # end
+  def destroy
+    raise CannotDeleteAliveVM, "Cannot delete compute #{id} " \
+      "when virtual machine is alive" if alive_vm?
+    super
+  end
 
   # def ip
   #  ips.first

@@ -1,7 +1,7 @@
 require 'multi_json'
 
 module LabManager
-  module App
+  class App
     module Endpoints
       # base REST api service class
       class Base < Sinatra::Base

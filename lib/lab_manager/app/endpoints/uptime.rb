@@ -1,7 +1,7 @@
 require 'lab_manager/app/endpoints/base'
 
 module LabManager
-  module App
+  class App
     module Endpoints
       # handles uptime endpoint
       class Uptime < Base

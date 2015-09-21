@@ -98,7 +98,7 @@ module LabManager
     end
 
     def check_compute_state
-      if compute.dead_state? || compute.terminating?
+      if compute.dead? || compute.terminating?
         action.failed
         action.reason = "Compute 'id'=#{compute.id} is dead." \
           " Cannot accept action: #{action.command}"

@@ -5,6 +5,7 @@ require 'lab_manager/database'
 require 'lab_manager/workers/action_worker'
 
 require 'sidekiq'
+require 'raven'
 
 # main application module
 
