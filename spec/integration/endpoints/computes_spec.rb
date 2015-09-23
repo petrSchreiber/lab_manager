@@ -90,34 +90,81 @@ describe 'Computes' do
     end
   end
 
-  describe "DELETE /computes/:id" do
-    it 'returns 404 for non-exist ID' do
-      delete '/computes/123456'
-      expect(last_response.status).to eq 404
+  describe "actions" do
+    let!(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
+
+    [
+      #[:method, :url, :command]
+      [:delete, '/computes/%d',           'terminate_vm'],
+      [:put,    '/computes/%d/power_on',  'power_on'],
+      [:put,    '/computes/%d/power_off', 'power_off'],
+      [:put,    '/computes/%d/shutdown',  'shutdown'],
+      [:put,    '/computes/%d/reboot',    'reboot'],
+      [:put,    '/computes/%d/execute',    'execute'],
+    ].each do |method, url, command|
+
+      it 'returns 404 for non-exist ID' do
+        send(method, '/computes/123456')
+        expect(last_response.status).to eq 404
+      end
+
+      it "creates and schedule '#{command}' action for compute", sidekiq: true do
+        expect do
+          send(method, url % compute.id)
+        end.to change(LabManager::ActionWorker.jobs, :size).by(1)
+        expect(last_response.status).to eq 200
+        result = MultiJson.load(last_response.body)
+        expect(result['command']).to eq command
+        expect(result['state']).to eq 'queued'
+      end
     end
 
-    it 'schedule delete action for compute' do
-      compute =  create(:compute, provider_name: 'v_sphere', name: 'one')
-      delete "/computes/#{compute.id}"
-      result = MultiJson.load(last_response.body)
+    describe "reboot action" do
+      it "reboot returns 422 with invalid type param" do
+        put "/computes/#{compute.id}/reboot", { type: 'invalid-type' }
+        expect(last_response.status).to eq 422
+      end
+
+      it 'accepts type soft, hard and managed' do
+        put "/computes/#{compute.id}/reboot", { type: 'soft' }
+        expect(last_response.status).to eq 200
+        put "/computes/#{compute.id}/reboot", { type: 'hard' }
+        expect(last_response.status).to eq 200
+        put "/computes/#{compute.id}/reboot", { type: 'managed' }
+        expect(last_response.status).to eq 200
+      end
+
+      it "reboot set default type managed" do
+        put "/computes/#{compute.id}/reboot"
+        expect(last_response.status).to eq 200
+        result = MultiJson.load(last_response.body)
+        expect(result['payload']['type']).to eq 'managed'
+      end
+    end
+
+    it "execute pass command, user and password to action" do
+      headers = {'CONTENT_TYPE' => 'application/json'}
+      payload = {
+        command: 'echo 1',
+          user: 'user',
+          password: 'password',
+          args: [1,2,3],
+          working_dir: '/'
+      }
+
+      put "/computes/#{compute.id}/execute", payload.to_json, headers
+
       expect(last_response.status).to eq 200
-      expect(result['state']).to eq 'queued'
+      result = MultiJson.load(last_response.body)
+      expect(result['payload']).to eq ({
+        'command' => 'echo 1',
+        'user' => 'user',
+        'password' => 'password',
+        'args' => [1, 2, 3],
+        'working_dir' => '/'
+      })
     end
-  end
 
-  describe "PUT /computes/:id/power_on" do
-  end
-
-  describe "PUT /computes/:id/power_off" do
-  end
-
-  describe "PUT /computes/:id/shutdown" do
-  end
-
-  describe "PUT /computes/:id/reboot" do
-  end
-
-  describe "PUT /computes/:id/execute" do
   end
 
 end

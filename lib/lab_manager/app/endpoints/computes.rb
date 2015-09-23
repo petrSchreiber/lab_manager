@@ -5,6 +5,9 @@ module LabManager
     module Endpoints
       # handles all endpoints related to Computes
       class Compute < Base
+
+        REBOOT_TYPES = %w(soft hard managed)
+
         get '/' do
           # state = params[:state]
           scope = ::Compute.all
@@ -55,6 +58,10 @@ module LabManager
 
         put '/:id/reboot' do
           compute = ::Compute.find(params[:id])
+          halt 422, {
+            message: 'type shoule be one of: ' + REBOOT_TYPES.join(', ')
+          }.to_json if params['type'] and !REBOOT_TYPES.include?(params['type'])
+
           compute.actions.create!(
             command: :reboot,
             payload: { type: (params[:type] || 'managed') }
@@ -65,7 +72,13 @@ module LabManager
           compute = ::Compute.find(params[:id])
           compute.actions.create!(
             command: :execute,
-            payload: parmas.slice(:command, :user, :password)
+            payload: params.slice(
+              'command',
+              'args',
+              'working_dir',
+              'user',
+              'password'
+            )
           ).to_json
         end
 
