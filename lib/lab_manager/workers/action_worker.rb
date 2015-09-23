@@ -5,7 +5,7 @@ module LabManager
   class ActionWorker
     include Sidekiq::Worker
 
-    sidekiq_options queue: 'alive_jobs', retry: 2
+    sidekiq_options queue: 'compute_actions', retry: 1
 
     class UnknownAction < ArgumentError
     end
