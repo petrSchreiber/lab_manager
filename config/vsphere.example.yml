@@ -9,3 +9,13 @@ development:
     timeout: 6
   scheduler:
     max_vm: 10
+  create_vm_defaults:
+    datacenter: 'your data center'
+    linked_clone: true
+    dest_folder: 'your destination folder'
+    template_path: 501815c3-8410-b9f3-f159-380ef16e61fc #guid of template or template name
+    cluster: 'your cluster name' # should be set
+    power_on: false #should be set to false when drs rules should be adjusted
+    add_to_drs_group: 'your group name'
+
+

@@ -7,3 +7,4 @@ require 'lab_manager/app'
 
 LabManager.setup
 run LabManager::App.new
+
