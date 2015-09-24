@@ -91,5 +91,4 @@ describe LabManager::ActionWorker do
       action_worker.perform(action.id)
     end
   end
-
 end

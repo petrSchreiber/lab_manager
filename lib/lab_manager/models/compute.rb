@@ -20,7 +20,6 @@ require 'aasm'
 
 # model representing a virtual machine
 class Compute < ActiveRecord::Base
-
   class CannotDeleteAliveVM < RuntimeError
   end
 
@@ -138,8 +137,8 @@ class Compute < ActiveRecord::Base
   end
 
   def destroy
-    raise CannotDeleteAliveVM, "Cannot delete compute #{id} " \
-      "when virtual machine is alive" if alive_vm?
+    fail CannotDeleteAliveVM, "Cannot delete compute #{id} " \
+      'when virtual machine is alive' if alive_vm?
     super
   end
 
