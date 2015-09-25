@@ -27,6 +27,8 @@ gem 'rack-contrib',     '~> 1.4.0'
 gem 'rack-parser',      '~> 0.6.1', require: 'rack/parser'
 gem 'multi_json',       '~> 1.0'
 
+gem 'retryable',        '~> 2.0.2'
+
 group :development do
   # just for cmd, e.g.: rails g model, rails c, rails db
   gem 'rails', '4.2.3', require: false

@@ -242,6 +242,7 @@ GEM
       redis (~> 3.0, >= 3.0.4)
     rerun (0.10.0)
       listen (~> 2.7, >= 2.7.3)
+    retryable (2.0.2)
     rspec (3.3.0)
       rspec-core (~> 3.3.0)
       rspec-expectations (~> 3.3.0)
@@ -311,6 +312,7 @@ DEPENDENCIES
   rails (= 4.2.3)
   rbvmomi (~> 1.8.2)
   rerun
+  retryable (~> 2.0.2)
   rspec (~> 3.3.0)
   sentry-raven (~> 0.13.3)
   settingslogic (~> 2.0.9)
