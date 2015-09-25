@@ -41,6 +41,9 @@ module Provider
     class PowerOnError < RuntimeError
     end
 
+    class TerminateVmError < RuntimeError
+    end
+
     class ArgumentError < ArgumentError
     end
 
@@ -105,7 +108,16 @@ module Provider
     end
 
     def terminate_vm(_opts = {})
-      VSphere.connect.with do |_vs|
+      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+
+      VSphere.connect.with do |vs|
+        Retryable.retryable(tries: 3) do
+          server = vs.servers.get(instance_uuid)
+          break unless server
+          result = server.destroy['task_state']
+          raise TerminateVMError, 'unexpected state: #{result}' unless
+            result == 'success'
+        end
       end
     end
 
@@ -130,12 +142,11 @@ module Provider
     def vm_data(vm_instance_data = nil, full: false, vs: nil)
       data_proc = lambda do |vs_|
         vm_instance_data ||= vs_.get_virtual_machine(compute.provider_data['id'])
-        vm_instance_data.each_with_object({}) do |s, (k, v)|
+        vm_instance_data.each_with_object({}) do |(k, v), s|
           s[k] = case v
                  when Proc then full ? v.call : nil
                  when String then v
                  end
-          s
         end
       end
 
@@ -163,9 +174,8 @@ module Provider
       cluster = vm.runtime.host.parent
 
       group = cluster.configurationEx.group.find { |g| g.name == group }
-      vms = group.vm.each_with_object([vm]) do |res, v|
+      vms = group.vm.each_with_object([vm]) do |v, res|
         res << v
-        res
       end
       group.vm = vms
       cluster_group_spec = RbVmomi::VIM.ClusterGroupSpec(

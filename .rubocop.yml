@@ -9,6 +9,12 @@ Metrics/LineLength:
 
 Metrics/MethodLength:
   Max: 36
+  Exclude:
+    - 'lib/lab_manager/provider/vsphere.rb'
+
+Style/ClassLength:
+  Exclude:
+    - 'lib/lab_manager/provider/vsphere.rb'
 
 Style/BlockDelimiters:
   Enabled: true
@@ -33,6 +39,9 @@ Style/RedundantSelf:
 SingleSpaceBeforeFirstArg:
   Exclude:
     - 'lib/lab_manager/models/compute.rb'
+
+Style/EachWithObject:
+  Enabled: false
 
 AllCops:
   Exclude:
