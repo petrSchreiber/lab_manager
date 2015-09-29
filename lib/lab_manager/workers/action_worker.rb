@@ -46,6 +46,7 @@ module LabManager
       lock { compute.provisioning! }
       begin
         compute.create_vm(action.payload)
+        compute.save!
         lock(:provisioning) { compute.run! }
         action.succeeded!
       rescue => e
@@ -61,6 +62,7 @@ module LabManager
       lock { compute.terminate! }
       begin
         compute.terminate_vm(action.payload)
+        compute.save!
         lock(:terminating) { compute.terminated! }
         action.succeeded!
       rescue => e
