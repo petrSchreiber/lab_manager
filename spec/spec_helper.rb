@@ -1,6 +1,7 @@
 $LOAD_PATH << 'lib'
 
 ENV['RACK_ENV'] = ENV['RAILS_ENV'] = ENV['RACK_ENV'] = ENV['ENV'] = 'test'
+ENV['FOG_MOCK'] = 'true'
 
 require 'rspec'
 require 'database_cleaner'
