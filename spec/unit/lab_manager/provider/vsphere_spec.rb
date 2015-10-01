@@ -58,7 +58,7 @@ describe Provider::VSphere do
         vm_clone_response
       end
 
-      allow(provider).to receive(:power_on) {}
+      allow(provider).to receive(:poweron_vm) {}
       provider.create_vm(args)
     end
 
@@ -74,7 +74,7 @@ describe Provider::VSphere do
         vm_clone_response
       end
 
-      allow(provider).to receive(:power_on) {}
+      allow(provider).to receive(:poweron_vm) {}
       provider.create_vm
     end
 
@@ -85,14 +85,14 @@ describe Provider::VSphere do
         vm_clone_response
       end
 
-      allow(provider).to receive(:power_on) {}
+      allow(provider).to receive(:poweron_vm) {}
       provider.create_vm
     end
 
     it 'add_machine_to_drs_rule is called when requested' do
       allow(vsphere_mock).to receive(:vm_clone) { vm_clone_response }
 
-      allow(provider).to receive(:power_on) {}
+      allow(provider).to receive(:poweron_vm) {}
       expect(provider).to receive(:add_machine_to_drs_rule_impl) do |_obj, params|
         expect(params[:group]).to eq 'GroupFoo'
       end
@@ -109,7 +109,7 @@ describe Provider::VSphere do
         vm_clone_response.merge('power_state' => 'poweredOff')
       end
 
-      expect(provider).to receive(:power_on).once
+      expect(provider).to receive(:poweron_vm).once
       provider.create_vm
     end
 
@@ -117,7 +117,7 @@ describe Provider::VSphere do
       allow(vsphere_mock).to receive(:vm_clone) { vm_clone_response }
 
       c = provider.compute
-      expect(provider).to receive(:power_on).once
+      expect(provider).to receive(:poweron_vm).once
       provider.create_vm
       expect(c.provider_data['id']).to eq vm_clone_response['new_vm']['id']
     end
@@ -132,7 +132,7 @@ describe Provider::VSphere do
     it 'calls terminate_vm when VM instance created but setup failed' do
       allow(vsphere_mock).to receive(:vm_clone) { vm_clone_response }
 
-      allow(provider).to receive(:power_on).and_raise(RbVmomi::Fault.new 'blah blah blah', 'fooGGG')
+      allow(provider).to receive(:poweron_vm).and_raise(RbVmomi::Fault.new 'blah blah', 'fooGGG')
       expect(provider).to receive(:terminate_vm).once
       expect { provider.create_vm }.to raise_error('fooGGG')
     end
@@ -141,7 +141,7 @@ describe Provider::VSphere do
   describe '#power_on' do
     it 'fails when provider data are not present' do
       provider.compute.provider_data = nil
-      expect { provider.power_on }.to raise_error(ArgumentError)
+      expect { provider.poweron_vm }.to raise_error(ArgumentError)
     end
 
     it 'uses correct id from provider_data field' do
@@ -155,7 +155,7 @@ describe Provider::VSphere do
 
       expect(vsphere_mock).to receive(:get_virtual_machine).and_return({})
       provider.compute.provider_data = { 'id' => 'fooo' }
-      provider.power_on
+      provider.poweron_vm
     end
 
     it 'retries fog#vm_power_on call when it fails and finally raises error' do
@@ -164,7 +164,7 @@ describe Provider::VSphere do
       )
 
       provider.compute.provider_data = { 'id' => 'fooo' }
-      expect { provider.power_on }.to raise_error(Provider::VSphere::PowerOnError)
+      expect { provider.poweron_vm }.to raise_error(Provider::VSphere::PowerOnError)
     end
   end
 

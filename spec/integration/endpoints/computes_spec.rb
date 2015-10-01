@@ -94,11 +94,11 @@ describe 'Computes' do
     [
       # [:method, :url, :command]
       [:delete, '/computes/%d',           'terminate_vm'],
-      [:put,    '/computes/%d/power_on',  'power_on'],
-      [:put,    '/computes/%d/power_off', 'power_off'],
-      [:put,    '/computes/%d/shutdown',  'shutdown'],
-      [:put,    '/computes/%d/reboot',    'reboot'],
-      [:put,    '/computes/%d/execute',    'execute']
+      [:put,    '/computes/%d/power_on',  'poweron_vm'],
+      [:put,    '/computes/%d/power_off', 'poweroff_vm'],
+      [:put,    '/computes/%d/shutdown',  'shutdown_vm'],
+      [:put,    '/computes/%d/reboot',    'reboot_vm'],
+      [:put,    '/computes/%d/execute',    'execute_vm']
     ].each do |method, url, command|
       it 'returns 404 for non-exist ID' do
         send(method, '/computes/123456')

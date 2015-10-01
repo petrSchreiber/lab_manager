@@ -48,10 +48,10 @@ class Compute < ActiveRecord::Base
   delegate :create_vm,
            :terminate_vm,
            :power_off,
-           :power_on,
-           :reboot,
-           :shutdown,
-           :execute, to: :provider
+           :poweron_vm,
+           :reboot_vm,
+           :shutdown_vm,
+           :execute_vm, to: :provider
 
   include AASM
 
@@ -84,7 +84,7 @@ class Compute < ActiveRecord::Base
     event :shut_down     do transitions from: :running,        to: :shutting_down end
     event :powered_off   do transitions from: :shutting_down,  to: :powered_off   end
     event :power_on      do transitions from: :powered_off,    to: :powering_on   end
-    event :powered_on    do transitions from: :shutting_down,  to: :powered_off   end
+    event :powered_on    do transitions from: :powering_on,    to: :running       end
 
     event :suspend       do transitions from: :running,        to: :suspending    end
     event :suspended     do transitions from: :suspending,     to: :suspended     end
