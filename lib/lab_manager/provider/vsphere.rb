@@ -87,7 +87,7 @@ module Provider
           )
 
           fail CreateVMError, "CreationFailed, retrying (#{vm_name})" unless machine['vm_ref']
-          compute.provider_data = vm_data(machine['new_vm'], vs: vs)
+          set_provider_data(machine['new_vm'], vs: vs)
         end
         add_machine_to_drs_rule(
           vs,
@@ -96,7 +96,7 @@ module Provider
           datacenter: opts[:datacenter]
         ) if opts[:add_to_drs_group]
       end
-      power_on unless  vm_data['power_state'] == 'poweredOn'
+      power_on unless  compute.provider_data['power_state'] == 'poweredOn'
     rescue
       # Try to free unsuccessfully started/configured/... VM
       begin
@@ -115,7 +115,7 @@ module Provider
           server = vs.servers.get(instance_uuid)
           break unless server
           result = server.destroy['task_state']
-          raise TerminateVMError, 'unexpected state: #{result}' unless
+          fail TerminateVmError, 'unexpected state: #{result}' unless
             result == 'success'
         end
       end
@@ -129,9 +129,10 @@ module Provider
           task_result =  vs.vm_power_on(
             'instance_uuid' => instance_uuid
           )['task_state']
-          fail PowerOnEroor, "Power-on task finished in state: #{task_result}" unless
+          fail PowerOnError, "Power-on task finished in state: #{task_result}" unless
             task_result == 'success'
         end
+        set_provider_data(nil, vs: vs)
       end
     end
 
@@ -158,6 +159,10 @@ module Provider
     end
 
     private
+
+    def set_provider_data(vm_instance_data = nil, full: false, vs: nil)
+      compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
+    end
 
     def add_machine_to_drs_rule(vs, group:, machine:, datacenter:)
       Retryable.retryable(tries: 5, on: SetDrsGroupError) do
