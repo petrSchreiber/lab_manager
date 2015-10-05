@@ -7,16 +7,6 @@ require 'lab_manager/workers/action_worker'
 
 LabManager.setup
 
-def schedule_create_vm!(compute)
-  compute.with_lock do
-    compute.actions.build(command: :create_vm, payload: create_vm_options)
-    compute.enqueue
-    compute.save!
-  end
-rescue => err
-  LabManager.logger.error("Cannot create action `create_vm`: #{err}")
-end
-
 loop do
   LabManager.config.providers.each do |provider|
     provider_class = "::Provider::#{provider.to_s.camelize}".constantize
@@ -27,7 +17,7 @@ loop do
       "machines ids=#{schedule_computes.pluck(:id)}" unless schedule_computes.empty?
 
     schedule_computes.each do |compute|
-      schedule_create_vm!(compute)
+      compute.schedule_create_vm!
     end
   end
 

@@ -145,4 +145,19 @@ class Compute < ActiveRecord::Base
   # def ip
   #  ips.first
   # end
+
+  # schedule a creation of virtual machine by creating an action with
+  # command 'create_vm' (action object autmatically schedules background job).
+  #
+  def schedule_create_vm!
+    with_lock do
+      actions.build(command: :create_vm, payload: create_vm_options)
+      enqueue
+      save!
+    end
+  rescue => err
+    LabManager.logger.error("Cannot create action `create_vm`: #{err}")
+  end
+
+
 end

@@ -27,5 +27,26 @@ describe Compute do
         build(:compute).state = :queued
       end.to raise_exception(AASM::NoDirectAssignmentError)
     end
+
+    describe '#schedule_create_vm!' do
+      let(:compute) { create(:compute, provider_name: 'v_sphere', image: 'TA_7x64') }
+
+      it 'changes state to queued' do
+        compute.schedule_create_vm!
+        expect(compute.state).to eq('queued')
+      end
+
+      it 'saves (persist) compute DB' do
+        compute.schedule_create_vm!
+        expect(compute.changed?).to be false
+      end
+
+      it 'creates create_vm action and persis it to DB' do
+        expect do
+          compute.schedule_create_vm!
+        end.to change { compute.actions.count }.by(1)
+        expect(compute.actions.last.persisted?).to be true
+      end
+    end
   end
 end

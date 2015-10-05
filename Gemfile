@@ -28,7 +28,6 @@ gem 'rack-parser',      '~> 0.6.1', require: 'rack/parser'
 gem 'multi_json',       '~> 1.0'
 
 gem 'retryable',        '~> 2.0.2'
-gem 'rbvmomi',          '~> 1.8.2'
 
 group :development do
   # just for cmd, e.g.: rails g model, rails c, rails db
