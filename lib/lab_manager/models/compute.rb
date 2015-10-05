@@ -151,7 +151,7 @@ class Compute < ActiveRecord::Base
   #
   def schedule_create_vm!
     with_lock do
-      actions.build(command: :create_vm, payload: create_vm_options)
+      actions.build(command: :create_vm, payload: create_vm_options || {})
       enqueue
       save!
     end
