@@ -3,6 +3,7 @@ require 'lab_manager/provider/vsphere_config'
 require 'connection_pool'
 require 'securerandom'
 require 'retryable'
+require 'active_support/hash_with_indifferent_access'
 
 module Provider
   # VSphere provider implementation
@@ -67,16 +68,22 @@ module Provider
     end
 
     # TODO: what parameters are mandatory?
-    # whould be nice to be able to validate before sendting a request
+    # whould be nice to be able to validate before sending a request
 
     def create_vm(opts = {})
-      opts = opts.reverse_merge(VSphereConfig.create_vm_defaults || {})
+      opts = opts.with_indifferent_access.reverse_merge(
+        VSphereConfig.create_vm_defaults.symbolize_keys || {}
+      )
+
+      opts[:template_path] = compute.image if compute.image
+
       VSphere.connect.with do |vs|
         dest_folder = opts[:dest_folder]
         vm_name = opts[:name] || 'lm_' + SecureRandom.hex(8)
-        exception_cb = lambda do
+        exception_cb = lambda do |_p1|
           LabManager.logger.warn(
-            "Failed attempt to create virtual machine:  template_name: #{vm_name}"
+            "Failed attempt to create virtual machine:  template_name: #{opts[:template_path]}"\
+              ", vm_name: #{vm_name}"
           )
         end
         Retryable.retryable(

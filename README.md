@@ -54,4 +54,15 @@ curl -i -H 'Content-Type: application/json' --data '{"provider_name":"v_sphere",
 #destroy compute with id 1
 curl -i -X DELETE localhost:21000/computes/9
 
+#create & poweron virtual machine with custom name
+curl -i -H 'Content-Type: application/json' --data '{"provider_name":"v_sphere","image":"TA_8x64", "create_vm_options": {"name":"fooooooooo"}}' localhost:21000/computes/
+
+#create & poweron virtual machine in custom folder it must exist in advance
+curl -i -H 'Content-Type: application/json' --data '{"provider_name":"v_sphere","image":"TA_8x64", "create_vm_options": {"dest_folder":"foo/bar/baz"}}' localhost:21000/computes/
+
+#create & poweron full clone
+curl -i -H 'Content-Type: application/json' --data '{"provider_name":"v_sphere","image":"TA_8x64", "create_vm_options": {"linked_clone":false}}' localhost:21000/computes/
+
+
+
 ```

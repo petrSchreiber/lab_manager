@@ -158,6 +158,4 @@ class Compute < ActiveRecord::Base
   rescue => err
     LabManager.logger.error("Cannot create action `create_vm`: #{err}")
   end
-
-
 end
