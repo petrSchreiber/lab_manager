@@ -25,11 +25,12 @@ describe Provider::VSphere do
   end
 
   let!(:provider) do
-    Provider::VSphere.new(build(:compute, provider_name: :v_sphere, name: 'foo'))
+    Provider::VSphere.new(
+      build(:compute, provider_name: :v_sphere, name: 'foo', image: 'AxAA')
+    )
   end
 
   before(:each) do
-    allow(Provider::VSphereConfig).to receive(:create_vm_defaults) { {} }
     allow(Provider::VSphere).to receive(:connect) { connection_pool_mock }
     allow(connection_pool_mock).to receive(:with).and_yield(vsphere_mock)
     allow(Provider::VSphereConfig).to receive(:create_vm_defaults) { vm_defaults }
@@ -49,7 +50,7 @@ describe Provider::VSphere do
       expect(vsphere_mock).to receive(:vm_clone) do |param|
         expect(param['name']).to eq args[:name]
         expect(param['datacenter']).to eq args[:datacenter]
-        expect(param['template_path']).to eq args[:template_path]
+        expect(param['template_path']).to eq 'AxAA'
         expect(param['cluster']).to eq args[:cluster]
         expect(param['linked_clone']).to eq args[:linked_clone]
         expect(param['power_on']).to eq args[:power_on]
@@ -62,10 +63,37 @@ describe Provider::VSphere do
       provider.create_vm(args)
     end
 
+    it 'template_path argument is propagated to fog#clone_vm when compute.image is nil' do
+      args = {
+        name: 'a',
+        datacenter: 'b',
+        template_path: 'c',
+        cluster: 'd',
+        linked_clone: false,
+        power_on: true,
+        dest_folder: 'z'
+      }
+      expect(vsphere_mock).to receive(:vm_clone) do |param|
+        expect(param['name']).to eq args[:name]
+        expect(param['datacenter']).to eq args[:datacenter]
+        expect(param['template_path']).to eq 'c'
+        expect(param['cluster']).to eq args[:cluster]
+        expect(param['linked_clone']).to eq args[:linked_clone]
+        expect(param['power_on']).to eq args[:power_on]
+        expect(param['dest_folder']).to eq args[:dest_folder]
+
+        vm_clone_response
+      end
+
+      allow(provider).to receive(:poweron_vm) {}
+      provider.compute.image = nil
+      provider.create_vm(args)
+    end
+
     it 'default arguments are propagated to fog#clone_vm as well' do
       expect(vsphere_mock).to receive(:vm_clone) do |param|
         expect(param['datacenter']).to eq 'doo'
-        expect(param['template_path']).to eq 'aoo/boo/coo'
+        expect(param['template_path']).to eq 'AxAA'
         expect(param['cluster']).to eq 'kokoko'
         expect(param['linked_clone']).to eq true
         expect(param['power_on']).to eq true
