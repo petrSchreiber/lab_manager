@@ -25,19 +25,22 @@ module LabManager
         case action.command # measurement of stop.action before and after this case
         when 'create_vm'
           create_vm
-        when 'suspend'
-        when 'shut_down'
-        when 'reboot'
-        when 'revert'
-        when 'resume'
-        when 'power_on'
-        when 'take_snapshot'
-        when 'execute_script'
+        when 'suspend_vm'
+        when 'shutdown_vm'
+          shutdown_vm
+        when 'reboot_vm'
+          reboot_vm
+        when 'revert_vm'
+        when 'resume_vm'
+        when 'poweron_vm'
+          poweron_vm
+        when 'take_snapshot_vm'
+        when 'execute_vm'
         when 'terminate_vm'
           terminate_vm
         else
-          fail LabManager::UnknownAction, 'action with \'id\'=#{action_id}' \
-            ' has unknown \'command\': #{action.command.inspect}'
+          fail UnknownAction, "action with \'id\'=#{action_id}" \
+            " has unknown \'command\': #{action.command.inspect}"
         end
       end
     end
@@ -64,6 +67,54 @@ module LabManager
         compute.terminate_vm(action.payload)
         compute.save!
         lock(:terminating) { compute.terminated! }
+        action.succeeded!
+      rescue => e
+        action.failed
+        action.reason = e.to_s
+        action.save!
+        lock { compute.fatal_error! }
+        raise
+      end
+    end
+
+    def shutdown_vm
+      lock { compute.shut_down! }
+      begin
+        compute.shutdown_vm(action.payload)
+        compute.save!
+        lock { compute.powered_off! }
+        action.succeeded!
+      rescue => e
+        action.failed
+        action.reason = e.to_s
+        action.save!
+        lock { compute.fatal_error! }
+        raise
+      end
+    end
+
+    def reboot_vm
+      lock { compute.reboot! }
+      begin
+        compute.reboot_vm(action.payload)
+        compute.save!
+        lock { compute.rebooted! }
+        action.succeeded!
+      rescue => e
+        action.failed
+        action.reason = e.to_s
+        action.save!
+        lock { compute.fatal_error! }
+        raise
+      end
+    end
+
+    def poweron_vm
+      lock { compute.power_on! }
+      begin
+        compute.poweron_vm
+        compute.save!
+        lock { compute.powered_on! }
         action.succeeded!
       rescue => e
         action.failed

@@ -42,17 +42,17 @@ module LabManager
 
         put '/:id/power_on' do
           compute = ::Compute.find(params[:id])
-          compute.actions.create!(command: :power_on).to_json
+          compute.actions.create!(command: :poweron_vm).to_json
         end
 
         put '/:id/power_off' do
           compute = ::Compute.find(params[:id])
-          compute.actions.create!(command: :power_off).to_json
+          compute.actions.create!(command: :poweroff_vm).to_json
         end
 
         put '/:id/shutdown' do
           compute = ::Compute.find(params[:id])
-          compute.actions.create!(command: :shutdown).to_json
+          compute.actions.create!(command: :shutdown_vm).to_json
         end
 
         put '/:id/reboot' do
@@ -62,7 +62,7 @@ module LabManager
           }.to_json if params['type'] && !REBOOT_TYPES.include?(params['type'])
 
           compute.actions.create!(
-            command: :reboot,
+            command: :reboot_vm,
             payload: { type: (params[:type] || 'managed') }
           ).to_json
         end
@@ -70,7 +70,7 @@ module LabManager
         put '/:id/execute' do
           compute = ::Compute.find(params[:id])
           compute.actions.create!(
-            command: :execute,
+            command: :execute_vm,
             payload: params.slice(
               'command',
               'args',

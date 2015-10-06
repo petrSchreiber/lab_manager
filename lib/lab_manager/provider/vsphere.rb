@@ -44,7 +44,16 @@ module Provider
     class TerminateVmError < RuntimeError
     end
 
+    class ShutdownVmError < RuntimeError
+    end
+
     class ArgumentError < ArgumentError
+    end
+
+    class VmNotExistsError < RuntimeError
+    end
+
+    class RebootVmError < RuntimeError
     end
 
     attr_accessor :compute
@@ -96,7 +105,7 @@ module Provider
           datacenter: opts[:datacenter]
         ) if opts[:add_to_drs_group]
       end
-      power_on unless  compute.provider_data['power_state'] == 'poweredOn'
+      poweron_vm unless  compute.provider_data['power_state'] == 'poweredOn'
     rescue
       # Try to free unsuccessfully started/configured/... VM
       begin
@@ -121,7 +130,7 @@ module Provider
       end
     end
 
-    def power_on
+    def poweron_vm
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.connect.with do |vs|
@@ -133,6 +142,71 @@ module Provider
             task_result == 'success'
         end
         set_provider_data(nil, vs: vs)
+      end
+    end
+
+    def shutdown_vm(opts = {})
+      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+
+      VSphere.connect.with do |vs|
+        Retryable.retryable(tries: 6) do
+          server = vs.servers.get(instance_uuid)
+          fail VmNotExistsError, 'Vm not exists!' unless server
+          break if server.power_state == 'poweredOff'
+
+          case opts[:mode] || 'managed'
+          when 'hard'
+            server.stop(force: true)
+          when 'soft'
+            server.stop(force: false)
+          when 'managed'
+            begin
+              server.stop(force: false)
+            rescue => e
+              LabManager.logger.warn 'The graceful shut down of the machine failed, '\
+                "trying force off, #{e}"
+              server.stop(force: true)
+            end
+          else
+            fail ShutDownError, "Wrong mode specified: #{opts[:mode]}"
+          end
+
+          Retryable.retryable(tries: 23, sleep: 2) do
+            fail ShutdownVmError, 'Waiting for finish of the shutdown command'\
+              ' was not successful' unless
+                vs.get_virtual_machine(server.id)['power_state'] == 'poweredOff'
+          end
+        end
+
+        set_provider_data(nil, vs: vs)
+      end
+    end
+
+    def reboot_vm(opts = {})
+      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+
+      VSphere.connect.with do |vs|
+        Retryable.retryable(tries: 3) do
+          server = vs.servers.get(instance_uuid)
+          fail VmNotExistsError, 'Vm not exists!' unless server
+
+          case opts[:mode] || 'managed'
+          when 'hard'
+            server.reboot(instance_uuid: instance_uuid, force: true)
+          when 'soft'
+            server.reboot(instance_uuid: instance_uuid, force: false)
+          when 'managed'
+            begin
+              server.reboot(instance_uuid: instance_uuid, force: false)
+            rescue
+              LabManager.logger.warn 'The graceful rebooting of the machine failed, '\
+                "trying force reboot, #{e}"
+              server.reboot(instance_uuid: instance_uuid, force: true)
+            end
+          else
+            fail RebootVmError, "Reboot error, wrong mode: #{opts[:mode]}"
+          end
+        end
       end
     end
 
