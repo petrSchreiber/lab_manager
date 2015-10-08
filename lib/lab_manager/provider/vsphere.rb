@@ -8,6 +8,10 @@ require 'active_support/hash_with_indifferent_access'
 module Provider
   # VSphere provider implementation
   class VSphere
+    RETRYABLE_CALLBACK = lambda do |ex|
+      LabManager.logger.warn "Exception occured in retryable: #{ex}"
+    end
+
     class << self
       def connect
         @vspehre ||= ConnectionPool.new(
@@ -93,6 +97,7 @@ module Provider
         ) do
           machine = vs.vm_clone(
             'datacenter'    => opts[:datacenter],
+            'datastore'     => opts[:datastore],
             'template_path' => opts[:template_path],
             'name'          => vm_name,
             'cluster'       => opts[:cluster],
@@ -127,7 +132,7 @@ module Provider
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.connect.with do |vs|
-        Retryable.retryable(tries: 3) do
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           break unless server
           result = server.destroy['task_state']
@@ -141,7 +146,7 @@ module Provider
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.connect.with do |vs|
-        Retryable.retryable(tries: 3) do
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           task_result =  vs.vm_power_on(
             'instance_uuid' => instance_uuid
           )['task_state']
@@ -156,12 +161,13 @@ module Provider
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.connect.with do |vs|
-        Retryable.retryable(tries: 6) do
+        Retryable.retryable(tries: 6, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           fail VmNotExistsError, 'Vm not exists!' unless server
           break if server.power_state == 'poweredOff'
 
-          case opts[:mode] || 'managed'
+          mode = opts[:mode] || 'managed'
+          case mode
           when 'hard'
             server.stop(force: true)
           when 'soft'
@@ -175,7 +181,7 @@ module Provider
               server.stop(force: true)
             end
           else
-            fail ShutDownError, "Wrong mode specified: #{opts[:mode]}"
+            fail ShutdownVmError, "Wrong mode specified: #{opts[:mode]}"
           end
 
           Retryable.retryable(tries: 23, sleep: 2) do
@@ -193,11 +199,12 @@ module Provider
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.connect.with do |vs|
-        Retryable.retryable(tries: 3) do
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           fail VmNotExistsError, 'Vm not exists!' unless server
 
-          case opts[:mode] || 'managed'
+          mode = opts[:mode] || 'managed'
+          case mode
           when 'hard'
             server.reboot(instance_uuid: instance_uuid, force: true)
           when 'soft'
@@ -205,7 +212,7 @@ module Provider
           when 'managed'
             begin
               server.reboot(instance_uuid: instance_uuid, force: false)
-            rescue
+            rescue => e
               LabManager.logger.warn 'The graceful rebooting of the machine failed, '\
                 "trying force reboot, #{e}"
               server.reboot(instance_uuid: instance_uuid, force: true)
@@ -246,7 +253,7 @@ module Provider
     end
 
     def add_machine_to_drs_rule(vs, group:, machine:, datacenter:)
-      Retryable.retryable(tries: 5, on: SetDrsGroupError) do
+      Retryable.retryable(tries: 5, on: SetDrsGroupError, exception_cb: RETRYABLE_CALLBACK) do
         add_machine_to_drs_rule_impl(vs, group: group, machine: machine, datacenter: datacenter)
         fail SetDrsGroupError, "Cannot set machine #{machine} to drsGroup #{group}" unless
           machine_present_in_drs_rule?(vs, group: group, machine: machine, datacenter: datacenter)
