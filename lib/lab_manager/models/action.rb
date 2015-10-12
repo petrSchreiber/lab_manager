@@ -5,10 +5,11 @@
 #  id          :integer          not null, primary key
 #  compute_id  :integer
 #  command     :string           default(""), not null
-#  state       :string           default("queued")
+#  state       :string           default("queued"), not null
 #  reason      :text
 #  payload     :text
 #  job_id      :string
+#  action_data :text
 #  pending_at  :datetime
 #  finished_at :datetime
 #  created_at  :datetime         not null

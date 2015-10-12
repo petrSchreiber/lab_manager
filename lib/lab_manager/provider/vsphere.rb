@@ -19,11 +19,7 @@ module Provider
           timeout: VSphereConfig.connection_pool.timeout
         ) do
           Fog::Compute.new(
-            provider: :vsphere,
-            vsphere_username: VSphereConfig.username,
-            vsphere_password: VSphereConfig.password,
-            vsphere_server: VSphereConfig.server,
-            vsphere_expected_pubkey_hash: VSphereConfig.expected_pubkey_hash
+            { provider: :vsphere }.merge(VSphereConfig.connection)
           )
         end
       end
@@ -219,6 +215,31 @@ module Provider
             end
           else
             fail RebootVmError, "Reboot error, wrong mode: #{opts[:mode]}"
+          end
+        end
+      end
+    end
+
+    def execute_vm(opts)
+      opts = opts.with_indifferent_access
+      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      fail ArgumentError, 'user must be specified' unless opts[:user]
+      fail ArgumentError, 'password must be specified' unless opts[:password]
+      fail ArgumentError, 'command must be specified' unless opts[:command]
+
+      VSphere.connect.with do |vs|
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          unless opts[:async]
+            fail 'not implemented yet'
+          else
+            vs.vm_execute(
+              'instance_uuid' => instance_uuid,
+              'command' => opts[:command],
+              'user' => opts[:user],
+              'password' => opts[:password],
+              'args' => opts[:args],
+              'working_dir' => opts[:working_dir]
+            )
           end
         end
       end

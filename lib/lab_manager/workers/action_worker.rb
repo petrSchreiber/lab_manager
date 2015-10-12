@@ -36,6 +36,7 @@ module LabManager
           poweron_vm
         when 'take_snapshot_vm'
         when 'execute_vm'
+          execute_vm
         when 'terminate_vm'
           terminate_vm
         else
@@ -123,6 +124,18 @@ module LabManager
         lock { compute.fatal_error! }
         raise
       end
+    end
+
+    def execute_vm
+      fail 'Compute has to be in running state' unless compute.state == 'running'
+      action.action_data = compute.execute_vm(action.payload)
+      compute.save!
+      action.succeeded!
+    rescue => e
+      action.failed
+      action.reason = e.to_s
+      action.save!
+      raise
     end
 
     private

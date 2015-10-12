@@ -23,6 +23,7 @@ ActiveRecord::Schema.define(version: 20150909130531) do
     t.text     "reason"
     t.text     "payload"
     t.string   "job_id"
+    t.text     "action_data"
     t.datetime "pending_at"
     t.datetime "finished_at"
     t.datetime "created_at",                     null: false
