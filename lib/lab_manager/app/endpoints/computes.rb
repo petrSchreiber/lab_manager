@@ -21,7 +21,12 @@ module LabManager
         end
 
         get '/:id' do
-          ::Compute.find(params[:id]).to_json
+          begin
+            ids = params[:id].to_s.split(',').each(&:to_i)
+            ::Compute.find(ids.count == 1 ? params[:id] : ids).to_json
+          rescue ActiveRecord::RecordNotFound => e
+            halt 404, { message: e.message }.to_json
+          end
         end
 
         post '/' do

@@ -88,6 +88,27 @@ describe 'Computes' do
     end
   end
 
+  describe 'GET /computes/:ids' do
+    let!(:c1) { create(:compute, provider_name: 'v_sphere', name: 'one') }
+    let!(:c2) { create(:compute, provider_name: 'v_sphere', name: 'two') }
+
+    it 'returns 404 for not-existing ID' do
+      get "/computes/#{c1.id},#{c2.id},34455321344"
+      expect(last_response.status).to eq 404
+    end
+
+    it 'returns 404 for not-numeral IDs' do
+      get '/computes/abcd,efgh,ijklm'
+      expect(last_response.status).to eq 404
+    end
+
+    it 'returns the specified computes' do
+      get "/computes/#{c1.id},#{c2.id}"
+      expect(last_response.status).to eq 200
+      expect(last_response.body).to eq [c1, c2].to_json
+    end
+  end
+
   describe 'actions' do
     let!(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
 
