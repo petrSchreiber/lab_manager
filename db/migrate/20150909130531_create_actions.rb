@@ -7,6 +7,7 @@ class CreateActions < ActiveRecord::Migration
       t.text :reason
       t.text :payload
       t.string :job_id
+      t.text :action_data
       t.datetime :pending_at
       t.datetime :finished_at
 

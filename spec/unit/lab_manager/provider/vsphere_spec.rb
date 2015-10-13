@@ -409,4 +409,52 @@ describe Provider::VSphere do
       end
     end
   end
+
+  describe '#execute_vm' do
+    context 'when not all required arguments given' do
+      it 'raises an exception' do
+        provider.compute.provider_data = { 'id' => 'aaa' }
+        expect { provider.execute_vm(user: 'foo') }.to raise_exception(ArgumentError)
+        expect { provider.execute_vm }.to raise_exception(ArgumentError)
+      end
+    end
+
+    context 'when no provider_data given' do
+      it 'raises an exception' do
+        expect { provider.execute_vm }.to raise_exception(ArgumentError)
+      end
+    end
+
+    context 'when all required arguments given' do
+      it 'calls fog#vm_execute and returns pid' do
+        args = {
+          user: 'a',
+          password: 'b',
+          command: 'c',
+          async: true
+        }
+        expect(vsphere_mock).to receive(:vm_execute) do |param|
+          expect(param['user']).to eq args[:user]
+          expect(param['password']).to eq args[:password]
+          expect(param['command']).to eq args[:command]
+          111_222
+        end
+
+        provider.compute.provider_data = { 'id' => 'aaa' }
+        expect(provider.execute_vm(args)).to eq 111_222
+      end
+
+      it 'throws an exception when async=false' do
+        args = {
+          user: 'a',
+          password: 'b',
+          command: 'c',
+          async: false
+        }
+
+        provider.compute.provider_data = { 'id' => 'aaa' }
+        expect { provider.execute_vm(args) }.to raise_exception('not implemented yet')
+      end
+    end
+  end
 end
