@@ -51,7 +51,8 @@ class Compute < ActiveRecord::Base
            :poweron_vm,
            :reboot_vm,
            :shutdown_vm,
-           :execute_vm, to: :provider
+           :execute_vm,
+           :upload_file_vm, to: :provider
 
   include AASM
 

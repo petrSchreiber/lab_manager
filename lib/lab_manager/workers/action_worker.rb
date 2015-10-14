@@ -35,6 +35,10 @@ module LabManager
         when 'poweron_vm'
           poweron_vm
         when 'take_snapshot_vm'
+        when 'upload_file_vm'
+          upload_file_vm
+        when 'execute_vm'
+          execute_vm
         when 'execute_vm'
           execute_vm
         when 'terminate_vm'
@@ -129,6 +133,20 @@ module LabManager
     def execute_vm
       fail 'Compute has to be in running state' unless compute.state == 'running'
       action.action_data = compute.execute_vm(action.payload)
+      compute.save!
+      action.succeeded!
+    rescue => e
+      action.failed
+      action.reason = e.to_s
+      action.save!
+      raise
+    end
+
+    def upload_file_vm
+      fail 'Compute has to be in running state' unless compute.state == 'running'
+      action.action_data = compute.upload_file_vm(
+        action.payload.merge(host_file: action.file_storage.file)
+      )
       compute.save!
       action.succeeded!
     rescue => e

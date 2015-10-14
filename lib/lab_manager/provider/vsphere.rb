@@ -245,6 +245,19 @@ module Provider
       end
     end
 
+    def upload_file_vm(opts)
+      opts = opts.with_indifferent_access
+      failed_opts = []
+      failed_opts.push('Virtual machine data not present') unless instance_uuid
+      failed_opts.push('user must be specified') unless opts[:user]
+      failed_opts.push('password must be specified') unless opts[:password]
+      failed_opts.push('guest_file_path must be specified') unless opts[:guest_file_path]
+      failed_opts.push('host_file must be specified') unless opts[:host_file]
+      fail ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
+
+      upload_file_impl(opts)
+    end
+
     def instance_uuid
       (compute.provider_data || {})['id']
     end
@@ -312,6 +325,50 @@ module Provider
       group = cluster.configurationEx.group.find { |g| g.name == group }
       machine_short_name = machine.sub!(%r{^.*\/}, '')
       !(group.vm.find { |v| v.name == machine_short_name }).nil?
+    end
+
+    def upload_file_impl(opts)
+      VSphere.connect.with do |vs|
+        conn = vs.instance_variable_get('@connection'.to_sym)
+
+        auth = RbVmomi::VIM::NamePasswordAuthentication(
+          username: opts[:user],
+          password: opts[:password],
+          interactiveSession: false
+        )
+
+        file_manager = conn.serviceContent.guestOperationsManager.fileManager
+
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          endpoint = file_manager.InitiateFileTransferToGuest(
+            vm: vm_data['mo_ref'],
+            auth: auth,
+            guestFilePath: opts[:guest_file_path],
+            overwrite: opts[:overwrite] || false,
+            fileAttributes: RbVmomi::VIM::GuestWindowsFileAttributes.new,
+            fileSize: opts[:host_file].size
+          )
+
+          uri = URI.parse(endpoint)
+
+          Net::HTTP.start(uri.host, uri.port,
+            :use_ssl => VSphereConfig.guest_operations[:use_ssl] || true,
+            :verify_mode => VSphereConfig.guest_operations[:verify_mode].constantize ||
+              OpenSSL::SSL::VERIFY_NONE
+          ) do |http|
+
+            req = Net::HTTP::Put.new(uri)
+            req.body = opts[:host_file].read
+            req['Content-Type'] = 'application/octet-stream'
+            req['Content-Length'] = opts[:host_file].size
+            res = http.request(req)
+            unless Net::HTTPSuccess === res
+              fail "Error: #{res.inspect} :: #{res.body} :: sending  via #{endpoint} "\
+                "with a size #{opts[:hostFile].size}"
+            end
+          end
+        end
+      end
     end
   end
 end

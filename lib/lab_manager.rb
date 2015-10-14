@@ -77,5 +77,6 @@ module LabManager
   end
 end
 
+require 'lab_manager/storage_uploader_config'
 require 'lab_manager/models'
 require 'lab_manager/providers'
