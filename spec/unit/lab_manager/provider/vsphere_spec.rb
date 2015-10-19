@@ -457,4 +457,33 @@ describe Provider::VSphere do
       end
     end
   end
+
+  describe '#upload_vm' do
+    context 'when not all required arguments given' do
+      it 'raises an exception' do
+        expect { provider.upload_file_vm }.to raise_exception(ArgumentError)
+      end
+    end
+
+    context 'when all required arguments given' do
+      it 'calls implementation method' do
+        args = {
+          user: 'a',
+          password: 'b',
+          guest_file_path: 'c',
+          host_file: File.new('Gemfile')
+        }
+
+        expect(provider).to receive(:upload_file_impl) do |param|
+          expect(param['user']).to eq args[:user]
+          expect(param['password']).to eq args[:password]
+          expect(param['guest_file_path']).to eq args[:guest_file_path]
+          expect(param['host_file']).to eq args[:host_file]
+        end
+
+        provider.compute.provider_data = { 'id' => 'aaa' }
+        provider.upload_file_vm(args)
+      end
+    end
+  end
 end

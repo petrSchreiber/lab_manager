@@ -18,6 +18,8 @@
 
 require 'aasm'
 require 'lab_manager/workers/action_worker'
+require 'lab_manager/storage_uploader'
+require 'carrierwave/orm/activerecord'
 
 # Action model, it is used as the store of actions which were dispatched to a compute
 class Action < ActiveRecord::Base
@@ -31,7 +33,7 @@ class Action < ActiveRecord::Base
   validates :command,
             inclusion: { in: %w(create_vm suspend_vm shutdown_vm reboot_vm revert_vm resume_vm
                                 poweron_vm poweroff_vm take_snapshot_vm execute_vm
-                                terminate_vm) },
+                                terminate_vm upload_file_vm) },
             presence: true
 
   validates :state,
@@ -39,6 +41,10 @@ class Action < ActiveRecord::Base
             presence: true
 
   serialize :payload
+
+  has_one :file_storage, inverse_of: :action
+
+  validates :file_storage, presence: true, if: ->(a) { a.command == 'upload_file_vm' }
 
   after_commit :schedule_action, on: :create
 
