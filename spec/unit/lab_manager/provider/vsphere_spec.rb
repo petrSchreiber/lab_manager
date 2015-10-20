@@ -486,4 +486,32 @@ describe Provider::VSphere do
       end
     end
   end
+
+  describe '#download_vm' do
+    context 'when not all required arguments given' do
+      it 'raises an exception' do
+        expect { provider.download_file_vm }.to raise_exception(ArgumentError)
+      end
+    end
+
+    context 'when all required arguments given' do
+      it 'calls implementation method and returns file class' do
+        args = {
+          user: 'a',
+          password: 'b',
+          guest_file_path: 'c'
+        }
+
+        expect(provider).to receive(:download_file_impl) do |param|
+          expect(param['user']).to eq args[:user]
+          expect(param['password']).to eq args[:password]
+          expect(param['guest_file_path']).to eq args[:guest_file_path]
+          NamedStringIO.new('tempfile', 'FAKE DOWNLOADED FILE')
+        end
+
+        provider.compute.provider_data = { 'id' => 'aaa' }
+        expect(provider.download_file_vm(args).read).to eq 'FAKE DOWNLOADED FILE'
+      end
+    end
+  end
 end

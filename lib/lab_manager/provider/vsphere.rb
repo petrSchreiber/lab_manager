@@ -4,6 +4,7 @@ require 'connection_pool'
 require 'securerandom'
 require 'retryable'
 require 'active_support/hash_with_indifferent_access'
+require 'lab_manager/named_stringio'
 
 module Provider
   # VSphere provider implementation
@@ -258,6 +259,18 @@ module Provider
       upload_file_impl(opts)
     end
 
+    def download_file_vm(opts)
+      opts = opts.with_indifferent_access
+      failed_opts = []
+      failed_opts.push('Virtual machine data not present') unless instance_uuid
+      failed_opts.push('user must be specified') unless opts[:user]
+      failed_opts.push('password must be specified') unless opts[:password]
+      failed_opts.push('guest_file_path must be specified') unless opts[:guest_file_path]
+      fail ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
+
+      download_file_impl(opts)
+    end
+
     def instance_uuid
       (compute.provider_data || {})['id']
     end
@@ -327,6 +340,46 @@ module Provider
       !(group.vm.find { |v| v.name == machine_short_name }).nil?
     end
 
+    def download_file_impl(opts)
+      VSphere.connect.with do |vs|
+        conn = vs.instance_variable_get('@connection'.to_sym)
+
+        auth = RbVmomi::VIM::NamePasswordAuthentication(
+          username: opts[:user],
+          password: opts[:password],
+          interactiveSession: false
+        )
+
+        file_manager = conn.serviceContent.guestOperationsManager.fileManager
+
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          file_info = file_manager.InitiateFileTransferFromGuest(
+            vm: vm_data['mo_ref'],
+            auth: auth,
+            guestFilePath: opts[:guest_file_path]
+          )
+
+          uri = URI.parse(file_info.url)
+
+          Net::HTTP.start(uri.host, uri.port,
+            use_ssl: VSphereConfig.guest_operations[:use_ssl] || true,
+            verify_mode: VSphereConfig.guest_operations[:verify_mode].constantize ||
+              OpenSSL::SSL::VERIFY_NONE
+          ) do |http|
+
+            req = Net::HTTP::Get.new(uri)
+            res = http.request req
+
+            unless Net::HTTPSuccess === res
+              fail "Error: #{res.inspect} :: retrieving via #{uri}"
+            end
+
+            NamedStringIO.new('tempfile', res.body)
+          end
+        end
+      end
+    end
+
     def upload_file_impl(opts)
       VSphere.connect.with do |vs|
         conn = vs.instance_variable_get('@connection'.to_sym)
@@ -351,12 +404,14 @@ module Provider
 
           uri = URI.parse(endpoint)
 
-          Net::HTTP.start(uri.host, uri.port,
-            :use_ssl => VSphereConfig.guest_operations[:use_ssl] || true,
-            :verify_mode => VSphereConfig.guest_operations[:verify_mode].constantize ||
-              OpenSSL::SSL::VERIFY_NONE
+          Net::HTTP.start(
+            uri.host,
+            uri.port,
+            use_ssl: VSphereConfig.guest_operations[:use_ssl] || true,
+            verify_mode:
+              VSphereConfig.guest_operations[:verify_mode].constantize ||
+                OpenSSL::SSL::VERIFY_NONE
           ) do |http|
-
             req = Net::HTTP::Put.new(uri)
             req.body = opts[:host_file].read
             req['Content-Type'] = 'application/octet-stream'

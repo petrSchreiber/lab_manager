@@ -33,7 +33,7 @@ class Action < ActiveRecord::Base
   validates :command,
             inclusion: { in: %w(create_vm suspend_vm shutdown_vm reboot_vm revert_vm resume_vm
                                 poweron_vm poweroff_vm take_snapshot_vm execute_vm
-                                terminate_vm upload_file_vm) },
+                                terminate_vm upload_file_vm, download_file_vm) },
             presence: true
 
   validates :state,
