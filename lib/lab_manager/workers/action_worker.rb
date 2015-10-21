@@ -37,6 +37,8 @@ module LabManager
         when 'take_snapshot_vm'
         when 'upload_file_vm'
           upload_file_vm
+        when 'download_file_vm'
+          download_file_vm
         when 'execute_vm'
           execute_vm
         when 'execute_vm'
@@ -147,6 +149,20 @@ module LabManager
       action.action_data = compute.upload_file_vm(
         action.payload.merge(host_file: action.file_storage.file)
       )
+      compute.save!
+      action.succeeded!
+    rescue => e
+      action.failed
+      action.reason = e.to_s
+      action.save!
+      raise
+    end
+
+    def download_file_vm
+      fail 'Compute has to be in running state' unless compute.state == 'running'
+      action.build_file_storage
+      action.file_storage.file = compute.download_file_vm(action.payload)
+      action.save!
       compute.save!
       action.succeeded!
     rescue => e
