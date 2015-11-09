@@ -82,7 +82,14 @@ describe 'Computes' do
     end
 
     it 'returns the specified compute' do
-      get "/computes/#{c1.id}"
+      get "/computes/#{c1.id}", cached: 'false'
+      expect(last_response.status).to eq 200
+      expect(last_response.body).to eq c1.to_json
+    end
+
+    it 'calls reload and returns the specified compute (cached==true)' do
+      allow_any_instance_of(::Compute).to receive(:reload_provider_data) { true }
+      get "/computes/#{c1.id}", cached: 'true'
       expect(last_response.status).to eq 200
       expect(last_response.body).to eq c1.to_json
     end
@@ -103,7 +110,14 @@ describe 'Computes' do
     end
 
     it 'returns the specified computes' do
-      get "/computes/#{c1.id},#{c2.id}"
+      get "/computes/#{c1.id},#{c2.id}", cached: 'false'
+      expect(last_response.status).to eq 200
+      expect(last_response.body).to eq [c1, c2].to_json
+    end
+
+    it 'calls reload and returns the specified computes (cached==true)' do
+      allow_any_instance_of(::Compute).to receive(:reload_provider_data) { true }
+      get "/computes/#{c1.id},#{c2.id}", cached: 'true'
       expect(last_response.status).to eq 200
       expect(last_response.body).to eq [c1, c2].to_json
     end

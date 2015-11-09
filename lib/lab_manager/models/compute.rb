@@ -144,6 +144,12 @@ class Compute < ActiveRecord::Base
     super
   end
 
+  def reload_provider_data
+    provider.set_provider_data(nil, full: true)
+    save!
+    self
+  end
+
   # def ip
   #  ips.first
   # end
