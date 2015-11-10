@@ -25,6 +25,20 @@ module Provider
         end
       end
 
+      # This fucntion handles the possibility that the connection
+      # might not be used for a long time and thus another usage
+      # throws a "not authenticated" exception
+      def with_connection
+        connect.with do |conn|
+          begin
+            conn.current_time
+          rescue RbVmomi::Fault, Errno::EPIPE, EOFError
+            conn.reload
+          end
+          yield conn
+        end
+      end
+
       def filter_machines_to_be_scheduled(
         queued_machines: Compute.created.where(provider_name: 'v_sphere'),
         alive_machines: Compute.alive_vm.where(provider_name: 'v_sphere').order(:created_at)
@@ -78,7 +92,7 @@ module Provider
 
       opts[:template_path] = compute.image if compute.image
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         dest_folder = opts[:dest_folder]
         vm_name = opts[:name] || 'lm_' + SecureRandom.hex(8)
         exception_cb = lambda do |_p1|
@@ -128,7 +142,7 @@ module Provider
     def terminate_vm(_opts = {})
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           break unless server
@@ -142,7 +156,7 @@ module Provider
     def poweron_vm
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           task_result =  vs.vm_power_on(
             'instance_uuid' => instance_uuid
@@ -157,7 +171,7 @@ module Provider
     def shutdown_vm(opts = {})
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         Retryable.retryable(tries: 6, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           fail VmNotExistsError, 'Vm not exists!' unless server
@@ -195,7 +209,7 @@ module Provider
     def reboot_vm(opts = {})
       fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           fail VmNotExistsError, 'Vm not exists!' unless server
@@ -228,7 +242,7 @@ module Provider
       fail ArgumentError, 'password must be specified' unless opts[:password]
       fail ArgumentError, 'command must be specified' unless opts[:command]
 
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           unless opts[:async]
             fail 'not implemented yet'
@@ -289,15 +303,15 @@ module Provider
       if vs
         data_proc.call(vs)
       else
-        VSphere.connect.with(&data_proc)
+        VSphere.with_connection(&data_proc)
       end
     end
-
-    private
 
     def set_provider_data(vm_instance_data = nil, full: false, vs: nil)
       compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
     end
+
+    private
 
     def add_machine_to_drs_rule(vs, group:, machine:, datacenter:)
       Retryable.retryable(tries: 5, on: SetDrsGroupError, exception_cb: RETRYABLE_CALLBACK) do
@@ -341,7 +355,7 @@ module Provider
     end
 
     def download_file_impl(opts)
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         conn = vs.instance_variable_get('@connection'.to_sym)
 
         auth = RbVmomi::VIM::NamePasswordAuthentication(
@@ -381,7 +395,7 @@ module Provider
     end
 
     def upload_file_impl(opts)
-      VSphere.connect.with do |vs|
+      VSphere.with_connection do |vs|
         conn = vs.instance_variable_get('@connection'.to_sym)
 
         auth = RbVmomi::VIM::NamePasswordAuthentication(

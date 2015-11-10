@@ -32,8 +32,41 @@ describe Provider::VSphere do
 
   before(:each) do
     allow(Provider::VSphere).to receive(:connect) { connection_pool_mock }
+    allow(vsphere_mock).to receive(:current_time) { DateTime.now }
     allow(connection_pool_mock).to receive(:with).and_yield(vsphere_mock)
     allow(Provider::VSphereConfig).to receive(:create_vm_defaults) { vm_defaults }
+  end
+
+  describe 'with_connection' do
+    it 'calls reload function automatically when RbVmomi::Fault occured' do
+      allow(vsphere_mock).to receive(:current_time) { raise RbVmomi::Fault.new('foo', nil) }
+      allow(vsphere_mock).to receive(:abc) { true }
+      expect(vsphere_mock).to receive(:reload).once
+      Provider::VSphere.with_connection { |vs| vs.abc }
+    end
+
+    it 'calls reload function automatically when Errno::EPIPE occured' do
+      allow(vsphere_mock).to receive(:current_time) { raise Errno::EPIPE }
+      allow(vsphere_mock).to receive(:abc) { true }
+      expect(vsphere_mock).to receive(:reload).once
+      Provider::VSphere.with_connection { |vs| vs.abc }
+    end
+
+    it 'calls reload function automatically when EOFError occured' do
+      allow(vsphere_mock).to receive(:current_time) { raise EOFError }
+      allow(vsphere_mock).to receive(:abc) { true }
+      expect(vsphere_mock).to receive(:reload).once
+      Provider::VSphere.with_connection { |vs| vs.abc }
+    end
+
+    it 'does not call reload function automatically when other error occured' do
+      allow(vsphere_mock).to receive(:current_time) { raise Exception }
+      allow(vsphere_mock).to receive(:abc) { true }
+      expect(vsphere_mock).to_not receive(:reload)
+      expect do
+        Provider::VSphere.with_connection { |vs| vs.abc }
+      end.to raise_error Exception
+    end
   end
 
   describe '#create_vm' do
