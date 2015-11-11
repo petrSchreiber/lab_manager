@@ -547,4 +547,36 @@ describe Provider::VSphere do
       end
     end
   end
+
+  describe '#set_provider_data' do
+    context 'when underlying method throws specific exception' do
+      it 'repeates the call three times and returns without exception' do
+        provider.compute.provider_data = { id: '01234568' }
+        expect(provider).to receive(:vm_data).exactly(3).times do
+          fail Fog::Compute::Vsphere::NotFound
+        end
+
+        expect { provider.set_provider_data }.to_not raise_exception
+      end
+    end
+
+    context 'when underlying method throws another exception' do
+      it 'does not repeat the call and finishes with exception' do
+        provider.compute.provider_data = { id: '01234568' }
+        expect(provider).to receive(:vm_data).exactly(1).times do
+          fail 'foo'
+        end
+
+        expect { provider.set_provider_data }.to raise_exception 'foo'
+      end
+    end
+
+    context 'when provider_data hash doesn\'t contain id' do
+      it 'doesn\'t call get_virtual_machine' do
+        expect(vsphere_mock).not_to receive(:get_virtual_machine)
+        provider.compute.provider_data = { }
+        expect { provider.set_provider_data }.not_to raise_error
+      end
+    end
+  end
 end

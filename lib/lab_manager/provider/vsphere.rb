@@ -308,7 +308,24 @@ module Provider
     end
 
     def set_provider_data(vm_instance_data = nil, full: false, vs: nil)
-      compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
+      if vm_instance_data.nil? then
+        begin
+          return compute.provider_data unless compute.provider_data.include? 'id'
+
+          Retryable.retryable(
+            tries: 3,
+            sleep: 5,
+            exception_cb: Provider::VSphere::RETRYABLE_CALLBACK,
+            on: Fog::Compute::Vsphere::NotFound
+          ) do
+            compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
+          end
+        rescue Fog::Compute::Vsphere::NotFound
+          nil
+        end
+      else
+        compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
+      end
     end
 
     private
