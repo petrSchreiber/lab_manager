@@ -45,6 +45,17 @@ module LabManager
           compute.actions.create!(command: :terminate_vm).to_json
         end
 
+        get '/:id/actions' do
+          compute = ::Compute.find(params[:id])
+          compute.actions.to_json
+        end
+
+        get '/:compute_id/actions/:id' do
+          compute = ::Compute.find(params[:compute_id])
+          compute.actions.find(params[:id]).to_json
+        end
+
+
         # actions
 
         put '/:id/power_on' do
