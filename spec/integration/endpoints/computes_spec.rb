@@ -123,6 +123,31 @@ describe 'Computes' do
     end
   end
 
+  describe 'GET /computes/:id/actions' do
+    let!(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
+
+    it 'returns 404 when compute not found' do
+      get '/computes/123456/actions'
+      expect(last_response.status).to eq 404
+    end
+
+    it 'returns empty json array when no actions exist' do
+      get "/computes/#{compute.id}/actions"
+      expect(last_response.status).to eq 200
+      expect(JSON.load(last_response.body)).to eq []
+    end
+
+    it 'returns json array with actions' do
+      compute.actions.create!(command: :poweroff_vm)
+      compute.actions.create!(command: :poweron_vm)
+      get "/computes/#{compute.id}/actions"
+      body = last_response.body
+      expect(last_response.status).to eq 200
+      expect(JSON.load(body).size).to eq 2
+      expect(body).to eq compute.actions.to_json
+    end
+  end
+
   describe 'actions' do
     let!(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
 
