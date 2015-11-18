@@ -35,6 +35,7 @@ module LabManager
         when 'poweron_vm'
           poweron_vm
         when 'take_snapshot_vm'
+          take_snapshot_vm
         when 'upload_file_vm'
           upload_file_vm
         when 'download_file_vm'
@@ -163,6 +164,17 @@ module LabManager
       action.build_file_storage
       action.file_storage.file = compute.download_file_vm(action.payload)
       action.save!
+      compute.save!
+      action.succeeded!
+    rescue => e
+      action.failed
+      action.reason = e.to_s
+      action.save!
+      raise
+    end
+
+    def take_snapshot_vm
+      compute.take_snapshot_vm(action.payload)
       compute.save!
       action.succeeded!
     rescue => e

@@ -53,7 +53,8 @@ class Compute < ActiveRecord::Base
            :shutdown_vm,
            :execute_vm,
            :upload_file_vm,
-           :download_file_vm, to: :provider
+           :download_file_vm,
+           :take_snapshot_vm, to: :provider
 
   include AASM
 

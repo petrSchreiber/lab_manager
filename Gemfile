@@ -15,7 +15,8 @@ gem 'metriks',          '~> 0.9.9'
 gem 'connection_pool',  '~> 2.2.0'
 
 gem 'rbvmomi',          '~> 1.8.2'
-gem 'fog',              '~> 1.33.0'
+gem 'fog',              '~> 1.36.0'
+#gem 'fog-vsphere',      ''
 
 gem 'pg'
 gem 'aasm', '~> 4.2.0'

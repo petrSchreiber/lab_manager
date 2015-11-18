@@ -285,6 +285,18 @@ module Provider
       download_file_impl(opts)
     end
 
+    def take_snapshot_vm(opts)
+      opts = opts.with_indifferent_access
+      fail ArgumentError, 'Snapshot name must be specified' unless opts[:name]
+
+      VSphere.with_connection do |vs|
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          server = vs.servers.get(instance_uuid)
+          server.take_snapshot(opts[:name])
+        end
+      end
+    end
+
     def instance_uuid
       (compute.provider_data || {})['id']
     end
