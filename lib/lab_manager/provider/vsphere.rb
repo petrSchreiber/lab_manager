@@ -292,7 +292,7 @@ module Provider
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
-          server.take_snapshot(opts[:name])
+          server.take_snapshot(opts)
         end
       end
     end
