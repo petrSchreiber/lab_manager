@@ -103,15 +103,20 @@ module LabManager
         # NOTE: maybe standlone middleware?
 
         get '/:id/snapshots' do
+          compute = ::Compute.find(params[:id])
+          compute.snapshots.to_json
         end
 
         post '/:id/snapshots' do
         end
 
-        get '/:compute_id/snapshots/:id' do
+        get '/:id/snapshots/:snapshot_id' do
+          compute = ::Compute.find(params[:id])
+          action = compute.snapshots.find(params[:snapshot_id])
+          action.to_json
         end
 
-        get '/:compute_id/snapshots/:id/revert' do
+        get '/:id/snapshots/:snapshot_id/revert' do
         end
       end
     end

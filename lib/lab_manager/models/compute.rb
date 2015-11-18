@@ -33,7 +33,7 @@ class Compute < ActiveRecord::Base
 
   has_many :actions, dependent: :destroy, inverse_of: :compute
   # has_one   :provider, as: :providerable
-  has_many :snapshots, dependent: :destroy, inverse_of: :compute
+  has_many :snapshots, -> { order :id }, dependent: :destroy, inverse_of: :compute
 
   validates :image, :provider, presence: true
   validates :state, inclusion: { in: (%w(
