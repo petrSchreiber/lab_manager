@@ -108,6 +108,26 @@ module LabManager
         end
 
         post '/:id/snapshots' do
+          compute = ::Compute.find(params[:id])
+
+          halt 422, {
+            message: 'param `name` has to be passed'
+          }.to_json if params['name'].blank?
+          halt 422, {
+            message: 'only name is allowed param'
+          }.to_json unless (params.keys - %w(name id splat captures)).empty?
+
+          snapshot = compute.snapshots.create!(
+            name: params[:name]
+          )
+          compute.actions.create!(
+            command: 'take_snapshot_vm',
+            payload: {
+              snapshot_id: snapshot.id,
+              name: params['name']
+            }
+          )
+          snapshot.to_json
         end
 
         get '/:id/snapshots/:snapshot_id' do

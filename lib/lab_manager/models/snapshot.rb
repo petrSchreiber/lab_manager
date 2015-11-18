@@ -13,4 +13,8 @@
 
 class Snapshot < ActiveRecord::Base
   belongs_to :compute, inverse_of: :snapshots
+
+  serialize :provider_data, JSON
+
+  validates :name, :compute, presence: true, allow_nil: false
 end
