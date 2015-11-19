@@ -33,7 +33,7 @@ class Compute < ActiveRecord::Base
 
   has_many :actions, dependent: :destroy, inverse_of: :compute
   # has_one   :provider, as: :providerable
-  # has_many :snapshots, dependent: destroy
+  has_many :snapshots, -> { order :id }, dependent: :destroy, inverse_of: :compute
 
   validates :image, :provider, presence: true
   validates :state, inclusion: { in: (%w(
@@ -53,7 +53,8 @@ class Compute < ActiveRecord::Base
            :shutdown_vm,
            :execute_vm,
            :upload_file_vm,
-           :download_file_vm, to: :provider
+           :download_file_vm,
+           :take_snapshot_vm, to: :provider
 
   include AASM
 

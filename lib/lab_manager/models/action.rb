@@ -9,7 +9,6 @@
 #  reason      :text
 #  payload     :text
 #  job_id      :string
-#  action_data :text
 #  pending_at  :datetime
 #  finished_at :datetime
 #  created_at  :datetime         not null

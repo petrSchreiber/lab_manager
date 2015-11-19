@@ -1,3 +1,12 @@
+# == Schema Information
+#
+# Table name: file_storages
+#
+#  id        :integer          not null, primary key
+#  action_id :integer
+#  file      :string
+#
+
 
 require 'lab_manager/models/action'
 require 'carrierwave'

@@ -103,15 +103,40 @@ module LabManager
         # NOTE: maybe standlone middleware?
 
         get '/:id/snapshots' do
+          compute = ::Compute.find(params[:id])
+          compute.snapshots.to_json
         end
 
         post '/:id/snapshots' do
+          compute = ::Compute.find(params[:id])
+
+          halt 422, {
+            message: 'param `name` has to be passed'
+          }.to_json if params['name'].blank?
+          halt 422, {
+            message: 'only name is allowed param'
+          }.to_json unless (params.keys - %w(name id splat captures)).empty?
+
+          snapshot = compute.snapshots.create!(
+            name: params[:name]
+          )
+          compute.actions.create!(
+            command: 'take_snapshot_vm',
+            payload: {
+              snapshot_id: snapshot.id,
+              name: params['name']
+            }
+          )
+          snapshot.to_json
         end
 
-        get '/:compute_id/snapshots/:id' do
+        get '/:id/snapshots/:snapshot_id' do
+          compute = ::Compute.find(params[:id])
+          action = compute.snapshots.find(params[:snapshot_id])
+          action.to_json
         end
 
-        get '/:compute_id/snapshots/:id/revert' do
+        get '/:id/snapshots/:snapshot_id/revert' do
         end
       end
     end

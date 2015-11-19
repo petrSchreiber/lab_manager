@@ -222,4 +222,102 @@ describe 'Computes' do
       )
     end
   end
+
+  describe 'snapshots' do
+    let(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
+
+    describe 'GET /compute/:id/snapshosts' do
+      it 'returns status code 200 when compute exists' do
+        get "/computes/#{compute.id}/snapshots"
+        expect(last_response.status).to eq 200
+      end
+
+      it 'returns status code 404 when compute does not exitsts' do
+        get '/computes/404/snapshots'
+        expect(last_response.status).to eq 404
+      end
+
+      it 'returns empty list when no spatshots exists' do
+        get "/computes/#{compute.id}/snapshots"
+        expect(MultiJson.load(last_response.body)).to eq []
+      end
+
+      it 'returns all snapshots' do
+        s1 = compute.snapshots.create!(name: 'Snap1')
+        s2 = compute.snapshots.create!(name: 'Snap2')
+        get "/computes/#{compute.id}/snapshots"
+        response = MultiJson.load(last_response.body)
+        expect(response).to eq MultiJson.load([s1, s2].to_json)
+      end
+    end
+
+    describe 'GET /computes/:compute_id/snapshot/:id' do
+      let(:snapshot) { compute.snapshots.create!(name: 'Snap1') }
+
+      it 'returns status code 404 when compute does not exist' do
+        get "/computes/404/snapshots/#{snapshot.id}"
+        expect(last_response.status).to eq 404
+      end
+
+      it 'returns status code 404 when snapshot does not exist' do
+        get "/computes/#{snapshot.compute.id}/snapshots/123"
+        expect(last_response.status).to eq 404
+      end
+
+      it 'returns status code 200 when compute exists' do
+        get "/computes/#{snapshot.compute.id}/snapshots/#{snapshot.id}"
+        expect(last_response.status).to eq 200
+      end
+    end
+
+    describe 'POST /computes/:compute_id/snaphosts' do
+      it 'requires name param to be specified' do
+        post "/computes/#{compute.id}/snapshots"
+        expect(last_response.status).to eq 422
+        post "/computes/#{compute.id}/snapshots", { 'name' => '' }
+        expect(last_response.status).to eq 422
+        post "/computes/#{compute.id}/snapshots", { 'name' => 'correct' }
+        expect(last_response.status).to eq 200
+      end
+
+      it 'only name is allowed param' do
+        post "/computes/#{compute.id}/snapshots", { 'name' => '1', 'x' => 1 }
+        expect(last_response.status).to eq 422
+        response = MultiJson.load(last_response.body)
+        expect(response['message']).to match(/only.*is allowed/)
+      end
+
+      it 'creates snapshot model and returns it' do
+        post "/computes/#{compute.id}/snapshots", { 'name' => 'correct' }
+        expect(last_response.status).to eq 200
+        response = MultiJson.load(last_response.body)
+        snapshot = compute.snapshots.first
+        expect(response).to eq MultiJson.load(snapshot.to_json)
+      end
+
+      it 'assign name to snapshot model' do
+        post "/computes/#{compute.id}/snapshots", { 'name' => 'correct' }
+        snapshot = compute.snapshots.first
+        expect(snapshot.name).to eq 'correct'
+      end
+
+      it 'creates action for take_snapshot_vm' do
+        post "/computes/#{compute.id}/snapshots", { 'name' => 'correct' }
+        expect(last_response.status).to eq 200
+        response = MultiJson.load(last_response.body)
+        action = compute.actions.last
+        expect(action.command).to eq 'take_snapshot_vm'
+        expect(action.payload[:snapshot_id]).to eq response['id']
+        expect(action.payload[:name]).to eq 'correct'
+      end
+
+      it 'schedules sidekiq job for action', sidekiq: true do
+        expect do
+          post "/computes/#{compute.id}/snapshots", { 'name' => 'correct' }
+          expect(last_response.status).to eq 200
+        end.to change(LabManager::ActionWorker.jobs, :size).by(1)
+      end
+    end
+
+  end
 end

@@ -11,24 +11,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20151010120430) do
+ActiveRecord::Schema.define(version: 20151118130706) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "actions", force: :cascade do |t|
     t.integer  "compute_id"
-    t.string   "command",      default: "",       null: false
-    t.string   "state",        default: "queued", null: false
+    t.string   "command",     default: "",       null: false
+    t.string   "state",       default: "queued", null: false
     t.text     "reason"
     t.text     "payload"
     t.string   "job_id"
-    t.text     "action_data"
-    t.string   "file_storage"
     t.datetime "pending_at"
     t.datetime "finished_at"
-    t.datetime "created_at",                      null: false
-    t.datetime "updated_at",                      null: false
+    t.datetime "created_at",                     null: false
+    t.datetime "updated_at",                     null: false
   end
 
   create_table "computes", force: :cascade do |t|
@@ -49,4 +47,16 @@ ActiveRecord::Schema.define(version: 20151010120430) do
     t.string  "file"
   end
 
+  create_table "snapshots", force: :cascade do |t|
+    t.string   "name"
+    t.integer  "compute_id"
+    t.string   "provider_ref"
+    t.text     "provider_data"
+    t.datetime "created_at",    null: false
+    t.datetime "updated_at",    null: false
+  end
+
+  add_index "snapshots", ["compute_id"], name: "index_snapshots_on_compute_id", using: :btree
+
+  add_foreign_key "snapshots", "computes"
 end
