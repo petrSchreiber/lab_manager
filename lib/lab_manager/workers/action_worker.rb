@@ -30,7 +30,8 @@ module LabManager
           shutdown_vm
         when 'reboot_vm'
           reboot_vm
-        when 'revert_vm'
+        when 'revert_snapshot_vm'
+          revert_snapshot_vm
         when 'resume_vm'
         when 'poweron_vm'
           poweron_vm
@@ -180,6 +181,33 @@ module LabManager
       action.failed
       action.reason = e.to_s
       action.save!
+    end
+
+    def revert_snapshot_vm
+      lock { compute.revert! }
+      begin
+        fail ArgumentError, 'Wrong action payload' unless action.payload
+        fail ArgumentError, 'Wrong action payload, no snapshot_id provided' unless action.payload.has_key?(:snapshot_id)
+        snapshot = compute.snapshots.find(action.payload[:snapshot_id])
+        # we suppose, that revert process should be fully finished before performing
+        # some actions such as restart, shutdown, reboot, power_off etc.
+        lock do
+          compute.revert_snapshot_vm( { name: snapshot.name } )
+        end
+        action.succeeded!
+      rescue => e
+        action.failed
+        action.reason = e.to_s
+        action.save!
+      end
+
+      lock do
+        if compute.vm_state == :power_off then
+          compute.reverted_off!
+        else
+          compute.reverted_run!
+        end
+      end
     end
 
     private

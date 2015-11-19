@@ -319,5 +319,48 @@ describe 'Computes' do
       end
     end
 
+    describe 'POST /computes/:compute_id/snaphosts/:snapshot_id/revert' do
+      let(:snapshot) { compute.snapshots.create!(name: 'Snap1') }
+
+      it 'returns 404 when compute not found' do
+        post "/computes/#{compute.id + 200}/snapshots/#{snapshot.id}/revert"
+        expect(last_response.status).to eq 404
+      end
+
+      it 'returns 404 when snapshot not found' do
+        post "/computes/#{compute.id}/snapshots/#{snapshot.id + 100}/revert"
+        expect(last_response.status).to eq 404
+      end
+
+      context 'when params are OK' do
+        it 'returns 200' do
+          post "/computes/#{compute.id}/snapshots/#{snapshot.id}/revert"
+          expect(last_response.status).to eq 200
+        end
+
+        it 'creates the action' do
+          expect_any_instance_of(::Compute).to receive(:actions) do
+            double('fake acction',create!: { id: 899999})
+          end
+
+          post "/computes/#{compute.id}/snapshots/#{snapshot.id}/revert"
+        end
+
+        it 'returns the created action' do
+          allow_any_instance_of(::Compute).to receive(:actions) do
+            double('fake acction',create!: { id: 899999})
+          end
+
+          post "/computes/#{compute.id}/snapshots/#{snapshot.id}/revert"
+        end
+      end
+
+      it 'schedules sidekiq job for action', sidekiq: true do
+        expect do
+          post "/computes/#{compute.id}/snapshots/#{snapshot.id}/revert"
+          expect(last_response.status).to eq 200
+        end.to change(LabManager::ActionWorker.jobs, :size).by(1)
+      end
+    end
   end
 end
