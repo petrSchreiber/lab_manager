@@ -17,4 +17,5 @@ class Snapshot < ActiveRecord::Base
   serialize :provider_data, JSON
 
   validates :name, :compute, presence: true, allow_nil: false
+  validates :name, uniqueness: { scope: :compute_id }
 end

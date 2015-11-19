@@ -174,8 +174,13 @@ module LabManager
     end
 
     def take_snapshot_vm
-      compute.take_snapshot_vm(action.payload)
-      compute.save!
+      fail 'Snapshot already created' if snapshot.provider_ref
+      snapshot = compute.snaphots.find(action.payload[:snaphot_id])
+      # lock snapshot is not needed, because action is already locked
+      # (snapshot.with_lock('FOR UPDATE'))
+      snapshot.provider_data = compute.take_snapshot_vm(action.payload)
+      snapshot.provider_ref = snapshot.provider_ref[:ref]
+      snapshot.save!
       action.succeeded!
     rescue => e
       action.failed

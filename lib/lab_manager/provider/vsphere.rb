@@ -289,12 +289,33 @@ module Provider
       opts = opts.with_indifferent_access
       fail ArgumentError, 'Snapshot name must be specified' unless opts[:name]
 
+      server = nil
+      result_snapshot = nil
+
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           server.take_snapshot(opts)
         end
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          #TODO: we need to implement fog-vsphere #snapshot.get(name: name)
+          # for fasteer
+          result_snapshot = server.snapshots.all(recursive: true).find do |t|
+            t.name == opts[:name]
+          end
+        end
       end
+      return nil unless result_snapshot
+      result_snapshot.slice(
+        :name,
+        :quiesced,
+        :description,
+        :create_time,
+        :power_state,
+        :ref,
+        :snapshot_name_chain,
+        :ref_chain
+      )
     end
 
     def instance_uuid
