@@ -65,7 +65,6 @@ module LabManager
         action.reason = e.to_s
         action.save!
         lock { compute.fatal_error! }
-        raise
       end
     end
 
@@ -81,7 +80,6 @@ module LabManager
         action.reason = e.to_s
         action.save!
         lock { compute.fatal_error! }
-        raise
       end
     end
 
@@ -97,7 +95,6 @@ module LabManager
         action.reason = e.to_s
         action.save!
         lock { compute.fatal_error! }
-        raise
       end
     end
 
@@ -113,7 +110,6 @@ module LabManager
         action.reason = e.to_s
         action.save!
         lock { compute.fatal_error! }
-        raise
       end
     end
 
@@ -129,7 +125,6 @@ module LabManager
         action.reason = e.to_s
         action.save!
         lock { compute.fatal_error! }
-        raise
       end
     end
 
@@ -142,7 +137,6 @@ module LabManager
       action.failed
       action.reason = e.to_s
       action.save!
-      raise
     end
 
     def upload_file_vm
@@ -156,7 +150,6 @@ module LabManager
       action.failed
       action.reason = e.to_s
       action.save!
-      raise
     end
 
     def download_file_vm
@@ -170,23 +163,23 @@ module LabManager
       action.failed
       action.reason = e.to_s
       action.save!
-      raise
     end
 
     def take_snapshot_vm
+      fail 'Wrong action payload' unless action.payload
+      fail 'Wrong action payload, no snapshot_id provided' unless action.payload.has_key?(:snapshot_id)
+      snapshot = compute.snapshots.find(action.payload[:snapshot_id])
       fail 'Snapshot already created' if snapshot.provider_ref
-      snapshot = compute.snaphots.find(action.payload[:snaphot_id])
       # lock snapshot is not needed, because action is already locked
       # (snapshot.with_lock('FOR UPDATE'))
       snapshot.provider_data = compute.take_snapshot_vm(action.payload)
-      snapshot.provider_ref = snapshot.provider_ref[:ref]
+      snapshot.provider_ref = snapshot.provider_data['ref']
       snapshot.save!
       action.succeeded!
     rescue => e
       action.failed
       action.reason = e.to_s
       action.save!
-      raise
     end
 
     private
