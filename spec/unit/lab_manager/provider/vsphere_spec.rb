@@ -548,6 +548,31 @@ describe Provider::VSphere do
     end
   end
 
+  describe '#processes_vm' do
+    context 'when not all required arguments given' do
+      it 'raises an exception when no args' do
+        expect { provider.processes_vm }.to raise_exception(ArgumentError)
+      end
+
+      it 'raises an exception when only user given' do
+        expect do
+          provider.processes_vm({user: 'foo'})
+        end.to raise_exception('password must be specified')
+      end
+    end
+
+    context 'when all required arguments given' do
+      it 'calls implementation method and returns its result' do
+        expected = [ { a: 'b' }, { c: 'd' } ]
+        expect(vsphere_mock).to receive(:servers) do
+          double('servers', get: double('server', guest_processes: expected))
+        end
+
+        expect(provider.processes_vm({ user: 'd', password: 'e'})).to eq expected
+      end
+    end
+  end
+
   describe '#set_provider_data' do
     context 'when underlying method throws specific exception' do
       it 'repeates the call three times and returns without exception' do

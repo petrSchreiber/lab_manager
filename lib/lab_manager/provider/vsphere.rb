@@ -341,6 +341,27 @@ module Provider
       end
     end
 
+    def processes_vm(opts)
+      opts = opts.with_indifferent_access
+      fail ArgumentError, 'user must be specified' unless opts[:user]
+      fail ArgumentError, 'password must be specified' unless opts[:password]
+
+      server = nil
+      result = nil
+
+      VSphere.with_connection do |vs|
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          server = vs.servers.get(instance_uuid)
+        end
+
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          result = server.guest_processes(opts)
+        end
+      end
+
+      result
+    end
+
     def instance_uuid
       (compute.provider_data || {})['id']
     end

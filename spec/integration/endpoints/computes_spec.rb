@@ -363,4 +363,28 @@ describe 'Computes' do
       end
     end
   end
+
+  describe 'GET /computes/:compute_id/processes' do
+    let(:compute) { create(:compute, provider_name: 'v_sphere', name: 'one') }
+
+    it 'returns 404 when compute not found' do
+      get "/computes/#{compute.id + 200}/processes"
+      expect(last_response.status).to eq 404
+    end
+
+    it 'returns 404 when user not specified' do
+      get "/computes/#{compute.id}/processes", 'user' => 'fooo'
+      expect(last_response.status).to eq 422
+    end
+
+    it 'returns the created action' do
+      expect_any_instance_of(::Compute).to receive(:actions) do
+        double('fake acction', create!: { id: 899_999 })
+      end
+
+      get "/computes/#{compute.id}/processes", 'user' => 'fooo', 'password' => 'foo'
+      expect(last_response.status).to eq 200
+      expect(MultiJson.load(last_response.body).to_hash['id']).to eq 899_999
+    end
+  end
 end
