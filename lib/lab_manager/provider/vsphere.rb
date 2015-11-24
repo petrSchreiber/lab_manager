@@ -318,6 +318,29 @@ module Provider
       )
     end
 
+    def revert_snapshot_vm(opts)
+      opts = opts.with_indifferent_access
+      fail ArgumentError, 'Snapshot name must be specified' unless opts[:name]
+      server = nil
+      snapshot = nil
+      VSphere.with_connection do |vs|
+
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          server = vs.servers.get(instance_uuid)
+        end
+
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          snapshot = server.snapshots.all(recursive: true).find do |t|
+            t.name == opts[:name]
+          end
+        end
+        Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
+          server.revert_snapshot(snapshot)
+          set_provider_data(nil, vs: vs)
+        end
+      end
+    end
+
     def instance_uuid
       (compute.provider_data || {})['id']
     end
@@ -359,6 +382,18 @@ module Provider
       else
         compute.provider_data = vm_data(vm_instance_data, vs: vs, full: full)
       end
+    end
+
+    def vm_state
+      set_provider_data
+      case compute.provider_data['power_state']
+      when 'PoweredOn'
+        return :power_on
+      when 'PoweredOff'
+        return :power_off
+      end
+
+      fail "Error, unexpected state of machine: compute_id=#{compute.id}, vsphere_uuid=#{instance_uuid}"
     end
 
     private

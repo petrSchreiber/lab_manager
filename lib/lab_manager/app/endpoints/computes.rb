@@ -132,11 +132,22 @@ module LabManager
 
         get '/:id/snapshots/:snapshot_id' do
           compute = ::Compute.find(params[:id])
-          action = compute.snapshots.find(params[:snapshot_id])
-          action.to_json
+          snapshot = compute.snapshots.find(params[:snapshot_id])
+          snapshot.to_json
         end
 
-        get '/:id/snapshots/:snapshot_id/revert' do
+        post '/:id/snapshots/:snapshot_id/revert' do
+          compute = ::Compute.find(params[:id])
+          snapshot = compute.snapshots.find(params[:snapshot_id])
+
+          action = compute.actions.create!(
+            command: 'revert_snapshot_vm',
+            payload: {
+              snapshot_id: snapshot.id,
+            }
+          )
+
+          action.to_json
         end
       end
     end

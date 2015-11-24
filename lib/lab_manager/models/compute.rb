@@ -45,7 +45,8 @@ class Compute < ActiveRecord::Base
   serialize :create_vm_options, JSON
   serialize :provider_data, JSON
 
-  delegate :create_vm,
+  delegate :vm_state,
+           :create_vm,
            :terminate_vm,
            :power_off,
            :poweron_vm,
@@ -54,7 +55,8 @@ class Compute < ActiveRecord::Base
            :execute_vm,
            :upload_file_vm,
            :download_file_vm,
-           :take_snapshot_vm, to: :provider
+           :take_snapshot_vm,
+           :revert_snapshot_vm, to: :provider
 
   include AASM
 
@@ -94,8 +96,11 @@ class Compute < ActiveRecord::Base
     event :resume        do transitions from: :suspended,      to: :resuming      end
     event :resumed       do transitions from: :resuming,       to: :running       end
 
-    event :revert        do transitions from: :running,        to: :reverting     end
-    event :reverted      do transitions from: :reverting,      to: :running       end
+    event :revert        do transitions from: :running,        to: :reverting
+                            transitions from: :powered_off,    to: :reverting     end
+    event :reverted_run  do transitions from: :reverting,      to: :running       end
+    event :reverted_off  do transitions from: :reverting,      to: :powered_off   end
+
 
     event :take_snapshot do
       transitions from: :running, to: :running

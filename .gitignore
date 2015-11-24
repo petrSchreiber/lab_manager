@@ -4,4 +4,5 @@ config/static_machine.yml
 /tmp
 /db/*.sqlite3
 /REMEMBER.md
-storage/*
+/storage/*
+tags

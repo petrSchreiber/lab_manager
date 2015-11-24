@@ -127,6 +127,7 @@ describe LabManager::ActionWorker do
       compute.enqueue!
       action_worker.perform(action.id)
       expect(action.reload.state).to eq 'failed'
+      expect(action.reason).to eq 'foo'
     end
 
     it 'stores take_snapshot_vm\'s output to snapshot object' do
@@ -143,6 +144,89 @@ describe LabManager::ActionWorker do
       action_worker.perform(action.id)
       snapshot.reload
       expect(snapshot.provider_ref).to eq sample_provider_data[:ref]
+    end
+  end
+
+  context 'when revert_snapshot action is requested' do
+    let(:snapshot) { compute.snapshots.create!( name: 'foo') }
+    let(:sample_provider_data) { { a: 'b', c: 'd', e: 'f', ref: '123' } }
+    let(:action) { compute.actions.create!(command: :revert_snapshot_vm, payload: {snapshot_id: snapshot.id}) }
+
+    it 'fails when action payload is unset' do
+      allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
+      compute.enqueue!
+      compute.provisioning!
+      compute.run!
+      action = compute.actions.create!(command: :revert_snapshot_vm)
+      action_worker.perform(action.id)
+      expect(action.reload.state).to eq 'failed'
+      expect(action.reason).to eq 'Wrong action payload'
+    end
+
+    it 'fails when action payload doesn\'t have :snapshot_id' do
+      allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
+      compute.enqueue!
+      compute.provisioning!
+      compute.run!
+      action = compute.actions.create!(command: :revert_snapshot_vm, payload: {})
+      action_worker.perform(action.id)
+      expect(action.reload.state).to eq 'failed'
+      expect(action.reason).to eq 'Wrong action payload, no snapshot_id provided'
+    end
+
+    it 'calls revert_snapshot_vm on compute object' do
+      allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
+      expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) { fail 'foo' }
+      compute.enqueue!
+      compute.provisioning!
+      compute.run!
+      action_worker.perform(action.id)
+      expect(action.reload.state).to eq 'failed'
+      expect(action.reason).to eq 'foo'
+    end
+
+    context 'when revert_snapshot causes no exception and input is set properly' do
+      it 'returns succeeded action' do
+        allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
+        expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) { {} }
+        compute.enqueue!
+        compute.provisioning!
+        compute.run!
+        action_worker.perform(action.id)
+        expect(action.reload.state).to eq 'success'
+      end
+    end
+
+    context 'when take_snapshot was performed on running machine' do
+      it 'outputs the compute in running state' do
+        expect_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
+        expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) do
+          {}
+        end
+
+        compute.enqueue!
+        compute.provisioning!
+        compute.run!
+        action_worker.perform(action.id)
+        expect(action.reload.state).to eq 'success'
+        expect(compute.reload.state).to eq 'running'
+      end
+    end
+
+    context 'when take_snapshot was performed on powered_off machine' do
+      it 'outputs the compute in powered_off state' do
+        expect_any_instance_of(::Compute).to receive(:vm_state) { :power_off }
+        expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) do
+          {}
+        end
+
+        compute.enqueue!
+        compute.provisioning!
+        compute.run!
+        action_worker.perform(action.id)
+        expect(action.reload.state).to eq 'success'
+        expect(compute.reload.state).to eq 'powered_off'
+      end
     end
   end
 end
