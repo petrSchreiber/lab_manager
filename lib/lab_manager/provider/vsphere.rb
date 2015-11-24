@@ -298,7 +298,7 @@ module Provider
           server.take_snapshot(opts)
         end
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
-          #TODO: we need to implement fog-vsphere #snapshot.get(name: name)
+          # TODO: we need to implement fog-vsphere #snapshot.get(name: name)
           # for fasteer
           result_snapshot = server.snapshots.all(recursive: true).find do |t|
             t.name == opts[:name]
@@ -364,7 +364,7 @@ module Provider
     end
 
     def set_provider_data(vm_instance_data = nil, full: false, vs: nil)
-      if vm_instance_data.nil? then
+      if vm_instance_data.nil?
         begin
           return compute.provider_data unless compute.provider_data.include? 'id'
 
@@ -393,7 +393,8 @@ module Provider
         return :power_off
       end
 
-      fail "Error, unexpected state of machine: compute_id=#{compute.id}, vsphere_uuid=#{instance_uuid}"
+      fail 'Error, unexpected state of machine: '\
+        "compute_id=#{compute.id}, vsphere_uuid=#{instance_uuid}"
     end
 
     private
@@ -460,12 +461,13 @@ module Provider
 
           uri = URI.parse(file_info.url)
 
-          Net::HTTP.start(uri.host, uri.port,
+          Net::HTTP.start(
+            uri.host,
+            uri.port,
             use_ssl: VSphereConfig.guest_operations[:use_ssl] || true,
             verify_mode: VSphereConfig.guest_operations[:verify_mode].constantize ||
               OpenSSL::SSL::VERIFY_NONE
           ) do |http|
-
             req = Net::HTTP::Get.new(uri)
             res = http.request req
 

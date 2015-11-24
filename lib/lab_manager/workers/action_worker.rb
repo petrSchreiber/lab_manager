@@ -168,7 +168,7 @@ module LabManager
 
     def take_snapshot_vm
       fail 'Wrong action payload' unless action.payload
-      fail 'Wrong action payload, no snapshot_id provided' unless action.payload.has_key?(:snapshot_id)
+      fail 'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
       snapshot = compute.snapshots.find(action.payload[:snapshot_id])
       fail 'Snapshot already created' if snapshot.provider_ref
       # lock snapshot is not needed, because action is already locked
@@ -187,12 +187,13 @@ module LabManager
       lock { compute.revert! }
       begin
         fail ArgumentError, 'Wrong action payload' unless action.payload
-        fail ArgumentError, 'Wrong action payload, no snapshot_id provided' unless action.payload.has_key?(:snapshot_id)
+        fail ArgumentError,
+             'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
         snapshot = compute.snapshots.find(action.payload[:snapshot_id])
         # we suppose, that revert process should be fully finished before performing
         # some actions such as restart, shutdown, reboot, power_off etc.
         lock do
-          compute.revert_snapshot_vm( { name: snapshot.name } )
+          compute.revert_snapshot_vm(name: snapshot.name)
         end
         action.succeeded!
       rescue => e
@@ -202,7 +203,7 @@ module LabManager
       end
 
       lock do
-        if compute.vm_state == :power_off then
+        if compute.vm_state == :power_off
           compute.reverted_off!
         else
           compute.reverted_run!

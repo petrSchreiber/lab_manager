@@ -93,9 +93,11 @@ describe LabManager::ActionWorker do
   end
 
   context 'when take_snapshot action is requested' do
-    let(:snapshot) { compute.snapshots.create!( name: 'foo') }
+    let(:snapshot) { compute.snapshots.create!(name: 'foo') }
     let(:sample_provider_data) { { a: 'b', c: 'd', e: 'f', ref: '123' } }
-    let(:action) { compute.actions.create!(command: :take_snapshot_vm, payload: {snapshot_id: snapshot.id}) }
+    let(:action) do
+      compute.actions.create!(command: :take_snapshot_vm, payload: { snapshot_id: snapshot.id })
+    end
 
     it 'fails when action payload is unset' do
       compute.enqueue!
@@ -110,7 +112,7 @@ describe LabManager::ActionWorker do
       action = compute.actions.create!(command: :take_snapshot_vm, payload: {})
       action_worker.perform(action.id)
       expect(action.reload.state).to eq 'failed'
-      expect(action.reason).to eq 'Wrong action payload, no snapshot_id provided'
+      expect(action.reason).to eq 'Wrong action payload, no snapshot_id given'
     end
 
     it 'fails when shapshot#provider_ref is already filled' do
@@ -148,9 +150,11 @@ describe LabManager::ActionWorker do
   end
 
   context 'when revert_snapshot action is requested' do
-    let(:snapshot) { compute.snapshots.create!( name: 'foo') }
+    let(:snapshot) { compute.snapshots.create!(name: 'foo') }
     let(:sample_provider_data) { { a: 'b', c: 'd', e: 'f', ref: '123' } }
-    let(:action) { compute.actions.create!(command: :revert_snapshot_vm, payload: {snapshot_id: snapshot.id}) }
+    let(:action) do
+      compute.actions.create!(command: :revert_snapshot_vm, payload: { snapshot_id: snapshot.id })
+    end
 
     it 'fails when action payload is unset' do
       allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
@@ -171,7 +175,7 @@ describe LabManager::ActionWorker do
       action = compute.actions.create!(command: :revert_snapshot_vm, payload: {})
       action_worker.perform(action.id)
       expect(action.reload.state).to eq 'failed'
-      expect(action.reason).to eq 'Wrong action payload, no snapshot_id provided'
+      expect(action.reason).to eq 'Wrong action payload, no snapshot_id given'
     end
 
     it 'calls revert_snapshot_vm on compute object' do
