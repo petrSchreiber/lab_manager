@@ -50,7 +50,7 @@ describe Compute do
     end
 
     describe '#reload_provider_data' do
-      let(:compute) { build(:compute, provider_data: { a: 'b' } ) }
+      let(:compute) { build(:compute, provider_data: { a: 'b' }) }
       let(:fake_provider) { double('fake provider') }
 
       before :each do
@@ -76,8 +76,8 @@ describe Compute do
       end
 
       it 'calls save! when set_provider_data succeeded' do
-        expect(fake_provider).to receive(:set_provider_data) { }
-        expect(compute).to receive(:save!) { }
+        expect(fake_provider).to receive(:set_provider_data) {}
+        expect(compute).to receive(:save!) {}
         compute.reload_provider_data
       end
     end
