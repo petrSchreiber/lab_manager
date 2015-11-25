@@ -57,6 +57,26 @@ module LabManager
           compute.actions.find(params[:id]).to_json
         end
 
+        get '/:id/processes' do
+          # everything is asynchronous
+          compute = ::Compute.find(params[:id])
+
+          halt 422, {
+            message: 'param user must be given'
+          }.to_json if params[:user].blank?
+
+          halt 422, {
+            message: 'param password must be given'
+          }.to_json if params[:password].nil?
+
+          compute.actions.create!(
+            command: :processes_vm,
+            payload: {
+              user: params[:user],
+              password: params[:password]
+            }
+          ).to_json
+        end
 
         # actions
 

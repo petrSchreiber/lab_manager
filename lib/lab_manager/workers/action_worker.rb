@@ -35,6 +35,8 @@ module LabManager
         when 'resume_vm'
         when 'poweron_vm'
           poweron_vm
+        when 'processes_vm'
+          processes_vm
         when 'take_snapshot_vm'
           take_snapshot_vm
         when 'upload_file_vm'
@@ -209,6 +211,21 @@ module LabManager
           compute.reverted_run!
         end
       end
+    end
+
+    def processes_vm
+      fail 'Compute has to be in running state' unless compute.state == 'running'
+      fail 'Wrong action payload' unless Hash === action.payload
+      fail 'Wrong action payload, no user provided' unless action.payload.has_key?(:user)
+      fail 'Wrong action payload, no password provided' unless action.payload.has_key?(:password)
+      processes = compute.guest_processes
+      action.payload = processes
+      action.save!
+      action.succeeded!
+    rescue => e
+      action.failed
+      action.reason = e.to_s
+      action.save!
     end
 
     private

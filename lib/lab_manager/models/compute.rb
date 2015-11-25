@@ -53,6 +53,7 @@ class Compute < ActiveRecord::Base
            :reboot_vm,
            :shutdown_vm,
            :execute_vm,
+           :processes_vm,
            :upload_file_vm,
            :download_file_vm,
            :take_snapshot_vm,
