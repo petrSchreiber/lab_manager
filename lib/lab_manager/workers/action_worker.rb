@@ -66,21 +66,26 @@ module LabManager
       rescue => e
         action.failed
         action.reason = e.to_s
+        LabManager.logger.error e
         action.save!
         lock { compute.fatal_error! }
       end
     end
 
     def terminate_vm
+      return action.reschedule_action if compute.state == 'queued'
+      current_state = compute.state
+
       lock { compute.terminate! }
       begin
-        compute.terminate_vm(action.payload)
+        compute.terminate_vm(action.payload) unless current_state == 'created'
         compute.save!
         lock(:terminating) { compute.terminated! }
         action.succeeded!
       rescue => e
         action.failed
         action.reason = e.to_s
+        LabManager.logger.error e
         action.save!
         lock { compute.fatal_error! }
       end
