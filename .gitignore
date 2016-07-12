@@ -1,6 +1,4 @@
-/config/vsphere.yml
-config/static_machine.yml
-/config/database.yml
+/config
 /tmp
 /db/*.sqlite3
 /REMEMBER.md

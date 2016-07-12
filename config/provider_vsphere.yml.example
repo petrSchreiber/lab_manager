@@ -21,4 +21,10 @@ development:
     power_on: false #should be set to false when drs rules should be adjusted
     add_to_drs_group: 'your group name'
 
+test:
+  connection:
+    vsphere_username: foo
+    vsphere_password: bar
+    vsphere_server: baz
+    vsphere_rev: qux
 
