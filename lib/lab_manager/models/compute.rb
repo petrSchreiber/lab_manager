@@ -27,7 +27,7 @@ class Compute < ActiveRecord::Base
   ALIVE_STATES = %w(created queued provisioning running rebooting shutting_down
                     powered_off powering_on suspending suspended resuming
                     reverting terminating)
-  ALIVE_VM_STATES = ALIVE_STATES - %w(created queued)
+  ALIVE_VM_STATES = ALIVE_STATES - %w(created)
   DEAD_STATES = %w(terminated errored)
   ACTION_PENDING_STATES = ALIVE_STATES - %w(running stopped powered_off)
 

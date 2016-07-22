@@ -33,17 +33,26 @@ module Provider
           begin
             conn.current_time
           rescue RbVmomi::Fault, Errno::EPIPE, EOFError
-            conn.reload
+            LabManager.logger.warn("Connection isn't working, created new one")
+            conn = Fog::Compute.new( { provider: :vsphere }.merge(VSphereConfig.connection) )
           end
           yield conn
         end
       end
 
       def filter_machines_to_be_scheduled(
-        queued_machines: Compute.created.where(provider_name: 'v_sphere'),
-        alive_machines: Compute.alive_vm.where(provider_name: 'v_sphere').order(:created_at)
+        created_machines: Compute.created.where(provider_name: 'v_sphere'),
+        alive_machines: Compute.alive_vm.where(provider_name: 'v_sphere').order(:created_at),
+        errored_machines: Compute.where(state: 'errored')
       )
-        queued_machines.limit([0, VSphereConfig.scheduler.max_vm - alive_machines.count].max)
+        alive_with_errored = alive_machines.count + errored_machines.count
+
+        limit = [0, VSphereConfig.scheduler.max_vm - alive_with_errored].max
+
+        LabManager.logger.warn "allowed to be scheduled: #{limit}"
+        LabManager.logger.warn("alive_machines: #{alive_machines.count}, created_machines: #{created_machines.count}, errored_machines: #{errored_machines.count}")
+
+        created_machines.limit(limit)
       end
     end
 
@@ -94,7 +103,8 @@ module Provider
 
       VSphere.with_connection do |vs|
         dest_folder = opts[:dest_folder]
-        vm_name = opts[:name] || 'lm_' + SecureRandom.hex(8)
+        vm_name = opts[:name] || "#{compute.image}-"\
+          "#{SecureRandom.hex(4)}-#{Time.new.strftime("%Y%m%d")}"
         exception_cb = lambda do |_p1|
           LabManager.logger.warn(
             "Failed attempt to create virtual machine:  template_name: #{opts[:template_path]}"\
@@ -106,6 +116,7 @@ module Provider
           on: [RbVmomi::Fault, CreateVMError],
           exception_cb: exception_cb
         ) do
+          LabManager.logger.info "creating machine with name: #{vm_name} options: #{opts.inspect}"
           machine = vs.vm_clone(
             'datacenter'    => opts[:datacenter],
             'datastore'     => opts[:datastore],
@@ -118,9 +129,10 @@ module Provider
             'wait'          => true
           )
 
-          fail CreateVMError, "CreationFailed, retrying (#{vm_name})" unless machine['vm_ref']
+          fail CreateVMError, "Creation of (#{vm_name}) machine failed, retrying" unless machine || machine['vm_ref']
           set_provider_data(machine['new_vm'], vs: vs)
         end
+
         add_machine_to_drs_rule(
           vs,
           group: opts[:add_to_drs_group],
@@ -368,13 +380,32 @@ module Provider
 
     def vm_data(vm_instance_data = nil, full: false, vs: nil)
       data_proc = lambda do |vs_|
+        net_info = []
+        if compute.provider_data && compute.provider_data['uuid']
+          conn = vs_.instance_variable_get('@connection'.to_sym)
+          vm = conn.searchIndex.FindByUuid({ uuid: compute.provider_data['uuid'], vmSearch: true })
+          net_info = vm.guest.net.map do |net|
+            {
+              network: net.network,
+              connected: net.connected,
+              device_config_id: net.deviceConfigId,
+              ip_addresses: net.ipConfig.ipAddress.each_with_object({}) do |ip, result|
+                key = IPAddr.new(ip.ipAddress).ipv4? ? 'ipv4' : 'ipv6'
+                result[key] ||= []
+                result[key] << ip.ipAddress
+                result
+              end
+            }
+          end
+        end
+
         vm_instance_data ||= vs_.get_virtual_machine(compute.provider_data['id'])
         vm_instance_data.each_with_object({}) do |(k, v), s|
           s[k] = case v
                  when Proc then full ? v.call : nil
                  when String then v
                  end
-        end
+        end.merge(network_info: net_info)
       end
 
       if vs
@@ -388,7 +419,6 @@ module Provider
       if vm_instance_data.nil?
         begin
           return compute.provider_data unless compute.provider_data.include? 'id'
-
           Retryable.retryable(
             tries: 3,
             sleep: 5,

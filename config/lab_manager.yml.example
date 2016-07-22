@@ -4,7 +4,6 @@ default: &default
   graphite:
   providers:
     - v_sphere
-    - static_machine
   redis:
     url: redis://localhost:6379
     size: 3
@@ -20,6 +19,9 @@ development:
 test:
   <<: *default
   log_level: <%= Logger::INFO %>
+  providers:
+    - v_sphere
+    - static_machine
 
 production:
   <<: *default

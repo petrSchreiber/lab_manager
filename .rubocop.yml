@@ -36,7 +36,7 @@ Style/RedundantSelf:
   Exclude:
     - 'lib/lab_manager/models/action.rb'
 
-SingleSpaceBeforeFirstArg:
+Style/SpaceBeforeFirstArg:
   Exclude:
     - 'lib/lab_manager/models/compute.rb'
 

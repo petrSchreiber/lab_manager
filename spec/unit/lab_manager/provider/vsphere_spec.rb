@@ -38,31 +38,31 @@ describe Provider::VSphere do
   end
 
   describe 'with_connection' do
-    it 'calls reload function automatically when RbVmomi::Fault occured' do
+    it 'creates new connection automatically when RbVmomi::Fault occured' do
       allow(vsphere_mock).to receive(:current_time) { fail RbVmomi::Fault.new('foo', nil) }
       allow(vsphere_mock).to receive(:abc) { true }
-      expect(vsphere_mock).to receive(:reload).once
+      expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
       Provider::VSphere.with_connection { |vs| vs.abc }
     end
 
-    it 'calls reload function automatically when Errno::EPIPE occured' do
+    it 'creates new connection automatically when Errno::EPIPE occured' do
       allow(vsphere_mock).to receive(:current_time) { fail Errno::EPIPE }
       allow(vsphere_mock).to receive(:abc) { true }
-      expect(vsphere_mock).to receive(:reload).once
+      expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
       Provider::VSphere.with_connection { |vs| vs.abc }
     end
 
-    it 'calls reload function automatically when EOFError occured' do
+    it 'creates new connection automatically when EOFError occured' do
       allow(vsphere_mock).to receive(:current_time) { fail EOFError }
       allow(vsphere_mock).to receive(:abc) { true }
-      expect(vsphere_mock).to receive(:reload).once
+      expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
       Provider::VSphere.with_connection { |vs| vs.abc }
     end
 
-    it 'does not call reload function automatically when other error occured' do
+    it 'does not create new connection automatically when other error occured' do
       allow(vsphere_mock).to receive(:current_time) { fail Exception }
       allow(vsphere_mock).to receive(:abc) { true }
-      expect(vsphere_mock).to_not receive(:reload)
+      expect(Fog::Compute).to_not receive(:new) { double('new_connection', abc: true) }
       expect do
         Provider::VSphere.with_connection { |vs| vs.abc }
       end.to raise_error Exception
@@ -141,7 +141,7 @@ describe Provider::VSphere do
 
     it 'name is generated automatically when not provided' do
       expect(vsphere_mock).to receive(:vm_clone) do |param|
-        expect(param['name']).to match(/^lm/)
+        expect(param['name']).to match(/^AxAA/)
 
         vm_clone_response
       end

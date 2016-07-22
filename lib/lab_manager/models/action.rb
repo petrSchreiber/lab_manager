@@ -59,6 +59,7 @@ class Action < ActiveRecord::Base
     event :pending   do transitions from: :queued, to: :pending end
     event :succeeded do transitions from: :pending, to: :success end
     event :failed    do transitions from: :pending, to: :failed   end
+    event :reenqueue do transitions from: :pending, to: :queued end
   end
 
   scope :done, -> { where(state: DONE_STATES) }
@@ -68,5 +69,11 @@ class Action < ActiveRecord::Base
   def schedule_action
     LabManager.logger.debug "Scheduling action id=#{self.id}"
     LabManager::ActionWorker.perform_async(self.id)
+  end
+
+  def reschedule_action(interval_time = 2.minutes)
+    self.reenqueue!
+    LabManager.logger.debug "Rescheduling action id=#{self.id} in: #{interval_time}"
+    LabManager::ActionWorker.perform_in(interval_time, self.id)
   end
 end
