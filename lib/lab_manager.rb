@@ -36,11 +36,12 @@ module LabManager
     # in #setup method
     #
     attr_writer :logger
+    attr_reader :start_time
 
     def setup
       fail 'setup was already done' if defined?(@config)
       # return if defined?(@config)
-
+      @start_time = Time.now
       logger.level = config.log_level || Logger::WARN
 
       if config.sentry_dsn
