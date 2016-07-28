@@ -189,7 +189,7 @@ module Provider
           fail VmNotExistsError, 'Vm not exists!' unless server
           break if server.power_state == 'poweredOff'
 
-          mode = opts[:mode] || 'managed'
+          mode = opts && opts[:mode] ? opts[:mode] : 'managed'
           case mode
           when 'hard'
             server.stop(force: true)
