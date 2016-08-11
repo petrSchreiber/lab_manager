@@ -1,3 +1,6 @@
+default: &default
+  vm_clone_retry_count: 5
+
 development:
   connection:
     username: 'cz\username'
@@ -20,6 +23,8 @@ development:
     cluster: 'your cluster name' # should be set
     power_on: false #should be set to false when drs rules should be adjusted
     add_to_drs_group: 'your group name'
+    vm_clone_retry_count: 5 # because of known VSphere errors
+  <<: *default
 
 test:
   connection:
@@ -27,4 +32,4 @@ test:
     vsphere_password: bar
     vsphere_server: baz
     vsphere_rev: qux
-
+  <<: *default

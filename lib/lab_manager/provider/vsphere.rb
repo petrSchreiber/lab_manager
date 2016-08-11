@@ -111,10 +111,12 @@ module Provider
               ", vm_name: #{vm_name}"
           )
         end
+
         Retryable.retryable(
-          tries: 3,
-          on: [RbVmomi::Fault, CreateVMError],
-          exception_cb: exception_cb
+          tries: VSphereConfig.vm_clone_retry_count,
+          on: [RbVmomi::Fault, CreateVMError, Fog::Compute::Vsphere::NotFound],
+          exception_cb: exception_cb,
+          sleep: ->(n) { Random.rand(n*3..n*3+10.0) }
         ) do
           LabManager.logger.info "creating machine with name: #{vm_name} options: #{opts.inspect}"
           machine = vs.vm_clone(
