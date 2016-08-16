@@ -113,7 +113,7 @@ module Provider
         end
 
         Retryable.retryable(
-          tries: VSphereConfig.vm_clone_retry_count,
+          tries: VSphereConfig.create_vm_defaults.vm_clone_retry_count,
           on: [RbVmomi::Fault, CreateVMError, Fog::Compute::Vsphere::NotFound],
           exception_cb: exception_cb,
           sleep: ->(n) { Random.rand(n*3..n*3+10.0) }
