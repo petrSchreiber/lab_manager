@@ -4,4 +4,3 @@ require 'lab_manager'
 
 LabManager.setup
 LabManager.logger = Sidekiq.logger
-

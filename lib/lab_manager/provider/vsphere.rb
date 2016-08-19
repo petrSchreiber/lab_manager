@@ -34,7 +34,7 @@ module Provider
             conn.current_time
           rescue RbVmomi::Fault, Errno::EPIPE, EOFError
             LabManager.logger.warn("Connection isn't working, created new one")
-            conn = Fog::Compute.new( { provider: :vsphere }.merge(VSphereConfig.connection) )
+            conn = Fog::Compute.new({ provider: :vsphere }.merge(VSphereConfig.connection))
           end
           yield conn
         end
@@ -50,7 +50,11 @@ module Provider
         limit = [0, VSphereConfig.scheduler.max_vm - alive_with_errored].max
 
         LabManager.logger.warn "allowed to be scheduled: #{limit}"
-        LabManager.logger.warn("alive_machines: #{alive_machines.count}, created_machines: #{created_machines.count}, errored_machines: #{errored_machines.count}")
+        LabManager.logger.warn(
+          "alive_machines: #{alive_machines.count}, " \
+          "created_machines: #{created_machines.count}, " \
+          "errored_machines: #{errored_machines.count}"
+        )
 
         created_machines.limit(limit)
       end
@@ -104,7 +108,7 @@ module Provider
       VSphere.with_connection do |vs|
         dest_folder = opts[:dest_folder]
         vm_name = opts[:name] || "#{compute.image}-"\
-          "#{SecureRandom.hex(4)}-#{Time.new.strftime("%Y%m%d")}"
+          "#{SecureRandom.hex(4)}-#{Time.new.strftime('%Y%m%d')}"
         exception_cb = lambda do |_p1|
           LabManager.logger.warn(
             "Failed attempt to create virtual machine:  template_name: #{opts[:template_path]}"\
@@ -116,7 +120,10 @@ module Provider
           tries: VSphereConfig.create_vm_defaults[:vm_clone_retry_count],
           on: [RbVmomi::Fault, CreateVMError, Fog::Compute::Vsphere::NotFound],
           exception_cb: exception_cb,
-          sleep: ->(n) { Random.rand(n*3..n*3+10.0) }
+          # n is zero based, wait in seconds.
+          # That means the waiting goes in ranges like:
+          # 0..10, 3..13, 6..16, ...
+          sleep: ->(n) { Random.rand(n * 3..n * 3 + 10.0) }
         ) do
           LabManager.logger.info "creating machine with name: #{vm_name} options: #{opts.inspect}"
           machine = vs.vm_clone(
@@ -131,7 +138,8 @@ module Provider
             'wait'          => true
           )
 
-          fail CreateVMError, "Creation of (#{vm_name}) machine failed, retrying" unless machine || machine['vm_ref']
+          error_message = "Creation of (#{vm_name}) machine failed, retrying"
+          raise CreateVMError, error_message unless machine || machine['vm_ref']
           set_provider_data(machine['new_vm'], vs: vs)
         end
 
@@ -154,28 +162,28 @@ module Provider
     end
 
     def terminate_vm(_opts = {})
-      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      raise ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
           break unless server
           result = server.destroy['task_state']
-          fail TerminateVmError, 'unexpected state: #{result}' unless
+          raise TerminateVmError, 'unexpected state: #{result}' unless
             result == 'success'
         end
       end
     end
 
     def poweron_vm
-      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      raise ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
-          task_result =  vs.vm_power_on(
+          task_result = vs.vm_power_on(
             'instance_uuid' => instance_uuid
           )['task_state']
-          fail PowerOnError, "Power-on task finished in state: #{task_result}" unless
+          raise PowerOnError, "Power-on task finished in state: #{task_result}" unless
             task_result == 'success'
         end
         set_provider_data(nil, vs: vs)
@@ -183,12 +191,12 @@ module Provider
     end
 
     def shutdown_vm(opts = {})
-      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      raise ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 6, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
-          fail VmNotExistsError, 'Vm not exists!' unless server
+          raise VmNotExistsError, 'Vm not exists!' unless server
           break if server.power_state == 'poweredOff'
 
           mode = opts && opts[:mode] ? opts[:mode] : 'managed'
@@ -206,11 +214,11 @@ module Provider
               server.stop(force: true)
             end
           else
-            fail ShutdownVmError, "Wrong mode specified: #{opts[:mode]}"
+            raise ShutdownVmError, "Wrong mode specified: #{opts[:mode]}"
           end
 
           Retryable.retryable(tries: 23, sleep: 2) do
-            fail ShutdownVmError, 'Waiting for finish of the shutdown command'\
+            raise ShutdownVmError, 'Waiting for finish of the shutdown command'\
               ' was not successful' unless
                 vs.get_virtual_machine(server.id)['power_state'] == 'poweredOff'
           end
@@ -221,12 +229,12 @@ module Provider
     end
 
     def reboot_vm(opts = {})
-      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      raise ArgumentError, 'Virtual machine data not present' unless instance_uuid
 
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
-          fail VmNotExistsError, 'Vm not exists!' unless server
+          raise VmNotExistsError, 'Vm not exists!' unless server
 
           mode = opts[:mode] || 'managed'
           case mode
@@ -243,7 +251,7 @@ module Provider
               server.reboot(instance_uuid: instance_uuid, force: true)
             end
           else
-            fail RebootVmError, "Reboot error, wrong mode: #{opts[:mode]}"
+            raise RebootVmError, "Reboot error, wrong mode: #{opts[:mode]}"
           end
         end
       end
@@ -251,25 +259,22 @@ module Provider
 
     def execute_vm(opts)
       opts = opts.with_indifferent_access
-      fail ArgumentError, 'Virtual machine data not present' unless instance_uuid
-      fail ArgumentError, 'user must be specified' unless opts[:user]
-      fail ArgumentError, 'password must be specified' unless opts[:password]
-      fail ArgumentError, 'command must be specified' unless opts[:command]
+      raise ArgumentError, 'Virtual machine data not present' unless instance_uuid
+      raise ArgumentError, 'user must be specified' unless opts[:user]
+      raise ArgumentError, 'password must be specified' unless opts[:password]
+      raise ArgumentError, 'command must be specified' unless opts[:command]
 
       VSphere.with_connection do |vs|
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
-          unless opts[:async]
-            fail 'not implemented yet'
-          else
-            vs.vm_execute(
-              'instance_uuid' => instance_uuid,
-              'command' => opts[:command],
-              'user' => opts[:user],
-              'password' => opts[:password],
-              'args' => opts[:args],
-              'working_dir' => opts[:working_dir]
-            )
-          end
+          raise 'not implemented yet' unless opts[:async]
+          vs.vm_execute(
+            'instance_uuid' => instance_uuid,
+            'command' => opts[:command],
+            'user' => opts[:user],
+            'password' => opts[:password],
+            'args' => opts[:args],
+            'working_dir' => opts[:working_dir]
+          )
         end
       end
     end
@@ -282,7 +287,7 @@ module Provider
       failed_opts.push('password must be specified') unless opts[:password]
       failed_opts.push('guest_file_path must be specified') unless opts[:guest_file_path]
       failed_opts.push('host_file must be specified') unless opts[:host_file]
-      fail ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
+      raise ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
 
       upload_file_impl(opts)
     end
@@ -294,14 +299,14 @@ module Provider
       failed_opts.push('user must be specified') unless opts[:user]
       failed_opts.push('password must be specified') unless opts[:password]
       failed_opts.push('guest_file_path must be specified') unless opts[:guest_file_path]
-      fail ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
+      raise ArgumentError, failed_opts.join(', ') unless failed_opts.empty?
 
       download_file_impl(opts)
     end
 
     def take_snapshot_vm(opts)
       opts = opts.with_indifferent_access
-      fail ArgumentError, 'Snapshot name must be specified' unless opts[:name]
+      raise ArgumentError, 'Snapshot name must be specified' unless opts[:name]
 
       server = nil
       result_snapshot = nil
@@ -334,11 +339,10 @@ module Provider
 
     def revert_snapshot_vm(opts)
       opts = opts.with_indifferent_access
-      fail ArgumentError, 'Snapshot name must be specified' unless opts[:name]
+      raise ArgumentError, 'Snapshot name must be specified' unless opts[:name]
       server = nil
       snapshot = nil
       VSphere.with_connection do |vs|
-
         Retryable.retryable(tries: 3, exception_cb: RETRYABLE_CALLBACK) do
           server = vs.servers.get(instance_uuid)
         end
@@ -357,8 +361,8 @@ module Provider
 
     def processes_vm(opts)
       opts = opts.with_indifferent_access
-      fail ArgumentError, 'user must be specified' unless opts[:user]
-      fail ArgumentError, 'password must be specified' unless opts[:password]
+      raise ArgumentError, 'user must be specified' unless opts[:user]
+      raise ArgumentError, 'password must be specified' unless opts[:password]
 
       server = nil
       result = nil
@@ -385,7 +389,7 @@ module Provider
         net_info = []
         if compute.provider_data && compute.provider_data['uuid']
           conn = vs_.instance_variable_get('@connection'.to_sym)
-          vm = conn.searchIndex.FindByUuid({ uuid: compute.provider_data['uuid'], vmSearch: true })
+          vm = conn.searchIndex.FindByUuid(uuid: compute.provider_data['uuid'], vmSearch: true)
           net_info = vm.guest.net.map do |net|
             {
               network: net.network,
@@ -446,21 +450,21 @@ module Provider
         return :power_off
       end
 
-      fail 'Error, unexpected state of machine: '\
+      raise 'Error, unexpected state of machine: '\
         "compute_id=#{compute.id}, vsphere_uuid=#{instance_uuid}"
     end
 
     private
 
-    def add_machine_to_drs_rule(vs, group:, machine:, datacenter:)
+    def add_machine_to_drs_rule(vs, group: nil, machine: nil, datacenter: nil)
       Retryable.retryable(tries: 5, on: SetDrsGroupError, exception_cb: RETRYABLE_CALLBACK) do
         add_machine_to_drs_rule_impl(vs, group: group, machine: machine, datacenter: datacenter)
-        fail SetDrsGroupError, "Cannot set machine #{machine} to drsGroup #{group}" unless
+        raise SetDrsGroupError, "Cannot set machine #{machine} to drsGroup #{group}" unless
           machine_present_in_drs_rule?(vs, group: group, machine: machine, datacenter: datacenter)
       end
     end
 
-    def add_machine_to_drs_rule_impl(vs, group:, machine:, datacenter:)
+    def add_machine_to_drs_rule_impl(vs, group: nil, machine: nil, datacenter: nil)
       conn = vs.instance_variable_get('@connection'.to_sym)
       dc = conn.serviceInstance.find_datacenter(datacenter)
       vm = dc.find_vm(machine)
@@ -482,7 +486,7 @@ module Provider
       ).wait_for_completion
     end
 
-    def machine_present_in_drs_rule?(vs, group:, machine:, datacenter:)
+    def machine_present_in_drs_rule?(vs, group: nil, machine: nil, datacenter: nil)
       conn = vs.instance_variable_get('@connection'.to_sym)
       dc = conn.serviceInstance.find_datacenter(datacenter)
       vm = dc.find_vm(machine)
@@ -524,8 +528,8 @@ module Provider
             req = Net::HTTP::Get.new(uri)
             res = http.request req
 
-            unless Net::HTTPSuccess === res
-              fail "Error: #{res.inspect} :: retrieving via #{uri}"
+            unless Net::HTTPSuccess.casecmp(res)
+              raise "Error: #{res.inspect} :: retrieving via #{uri}"
             end
 
             NamedStringIO.new('tempfile', res.body)
@@ -571,8 +575,8 @@ module Provider
             req['Content-Type'] = 'application/octet-stream'
             req['Content-Length'] = opts[:host_file].size
             res = http.request(req)
-            unless Net::HTTPSuccess === res
-              fail "Error: #{res.inspect} :: #{res.body} :: sending  via #{endpoint} "\
+            unless Net::HTTPSuccess.casecmp(res)
+              raise "Error: #{res.inspect} :: #{res.body} :: sending  via #{endpoint} "\
                 "with a size #{opts[:hostFile].size}"
             end
           end

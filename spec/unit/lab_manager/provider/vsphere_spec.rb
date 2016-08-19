@@ -40,32 +40,32 @@ describe Provider::VSphere do
 
   describe 'with_connection' do
     it 'creates new connection automatically when RbVmomi::Fault occured' do
-      allow(vsphere_mock).to receive(:current_time) { fail RbVmomi::Fault.new('foo', nil) }
+      allow(vsphere_mock).to receive(:current_time) { raise RbVmomi::Fault.new('foo', nil) }
       allow(vsphere_mock).to receive(:abc) { true }
       expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
-      Provider::VSphere.with_connection { |vs| vs.abc }
+      Provider::VSphere.with_connection(&:abc)
     end
 
     it 'creates new connection automatically when Errno::EPIPE occured' do
-      allow(vsphere_mock).to receive(:current_time) { fail Errno::EPIPE }
+      allow(vsphere_mock).to receive(:current_time) { raise Errno::EPIPE }
       allow(vsphere_mock).to receive(:abc) { true }
       expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
-      Provider::VSphere.with_connection { |vs| vs.abc }
+      Provider::VSphere.with_connection(&:abc)
     end
 
     it 'creates new connection automatically when EOFError occured' do
-      allow(vsphere_mock).to receive(:current_time) { fail EOFError }
+      allow(vsphere_mock).to receive(:current_time) { raise EOFError }
       allow(vsphere_mock).to receive(:abc) { true }
       expect(Fog::Compute).to receive(:new).once { double('new_connection', abc: true) }
-      Provider::VSphere.with_connection { |vs| vs.abc }
+      Provider::VSphere.with_connection(&:abc)
     end
 
     it 'does not create new connection automatically when other error occured' do
-      allow(vsphere_mock).to receive(:current_time) { fail Exception }
+      allow(vsphere_mock).to receive(:current_time) { raise Exception }
       allow(vsphere_mock).to receive(:abc) { true }
       expect(Fog::Compute).to_not receive(:new) { double('new_connection', abc: true) }
       expect do
-        Provider::VSphere.with_connection { |vs| vs.abc }
+        Provider::VSphere.with_connection(&:abc)
       end.to raise_error Exception
     end
   end
@@ -185,7 +185,8 @@ describe Provider::VSphere do
     end
 
     it 'does not call terminate_vm when vm_clone fails' do
-      allow(vsphere_mock).to receive(:vm_clone).and_raise(RbVmomi::Fault.new 'blah blah ', 'fooDDD')
+      allow(vsphere_mock).to receive(:vm_clone)
+        .and_raise(RbVmomi::Fault.new('blah blah ', 'fooDDD'))
 
       expect(provider).to receive(:terminate_vm).never
       expect { provider.create_vm }.to raise_error('fooDDD')
@@ -194,7 +195,7 @@ describe Provider::VSphere do
     it 'calls terminate_vm when VM instance created but setup failed' do
       allow(vsphere_mock).to receive(:vm_clone) { vm_clone_response }
 
-      allow(provider).to receive(:poweron_vm).and_raise(RbVmomi::Fault.new 'blah blah', 'fooGGG')
+      allow(provider).to receive(:poweron_vm).and_raise(RbVmomi::Fault.new('blah blah', 'fooGGG'))
       expect(provider).to receive(:terminate_vm).once
       expect { provider.create_vm }.to raise_error('fooGGG')
     end
@@ -297,7 +298,7 @@ describe Provider::VSphere do
         expect(server).to receive(:stop).twice do |param|
           expect(param[:force]).to eq second_time
           second_time = true
-          fail 'soft stop failed' if second_time
+          raise 'soft stop failed' if second_time
         end
         expect(servers).to receive(:get).at_least(:once) { server }
 
@@ -315,7 +316,7 @@ describe Provider::VSphere do
         expect(server).to receive(:power_state).at_least(:twice) { 'poweredOn' }
         expect(server).to receive(:stop).at_least(:once) do |param|
           expect(param[:force]).to eq true
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -330,7 +331,7 @@ describe Provider::VSphere do
         expect(server).to receive(:power_state).at_least(:twice) { 'poweredOn' }
         expect(server).to receive(:stop).at_least(:once) do |param|
           expect(param[:force]).to eq false
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -344,7 +345,7 @@ describe Provider::VSphere do
       it 'throws an exception' do
         expect(server).to receive(:power_state).at_least(:twice) { 'poweredOn' }
         expect(server).to receive(:stop).at_most(0).times do
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -389,7 +390,7 @@ describe Provider::VSphere do
         expect(server).to receive(:reboot).at_least(:twice) do |param|
           expect(param[:force]).to eq second_time
           second_time = !second_time
-          fail 'soft reboot failed' if second_time
+          raise 'soft reboot failed' if second_time
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -404,7 +405,7 @@ describe Provider::VSphere do
       it 'calls server.reboot with force' do
         expect(server).to receive(:reboot).at_least(:once) do |param|
           expect(param[:force]).to eq true
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -418,7 +419,7 @@ describe Provider::VSphere do
       it 'calls server.reboot without force' do
         expect(server).to receive(:reboot).at_least(:once) do |param|
           expect(param[:force]).to eq false
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -431,7 +432,7 @@ describe Provider::VSphere do
     context 'unknown mode' do
       it 'throws an exception' do
         expect(server).to receive(:reboot).at_most(0).times do
-          fail 'Expected function called'
+          raise 'Expected function called'
         end
 
         expect(servers).to receive(:get).at_least(:once) { server }
@@ -557,19 +558,19 @@ describe Provider::VSphere do
 
       it 'raises an exception when only user given' do
         expect do
-          provider.processes_vm({user: 'foo'})
+          provider.processes_vm(user: 'foo')
         end.to raise_exception('password must be specified')
       end
     end
 
     context 'when all required arguments given' do
       it 'calls implementation method and returns its result' do
-        expected = [ { a: 'b' }, { c: 'd' } ]
+        expected = [{ a: 'b' }, { c: 'd' }]
         expect(vsphere_mock).to receive(:servers) do
           double('servers', get: double('server', guest_processes: expected))
         end
 
-        expect(provider.processes_vm({ user: 'd', password: 'e'})).to eq expected
+        expect(provider.processes_vm(user: 'd', password: 'e')).to eq expected
       end
     end
   end
@@ -579,7 +580,7 @@ describe Provider::VSphere do
       it 'repeates the call three times and returns without exception' do
         provider.compute.provider_data = { id: '01234568' }
         expect(provider).to receive(:vm_data).exactly(3).times do
-          fail Fog::Compute::Vsphere::NotFound
+          raise Fog::Compute::Vsphere::NotFound
         end
 
         expect { provider.set_provider_data }.to_not raise_exception
@@ -590,7 +591,7 @@ describe Provider::VSphere do
       it 'does not repeat the call and finishes with exception' do
         provider.compute.provider_data = { id: '01234568' }
         expect(provider).to receive(:vm_data).exactly(1).times do
-          fail 'foo'
+          raise 'foo'
         end
 
         expect { provider.set_provider_data }.to raise_exception 'foo'

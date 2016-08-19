@@ -15,9 +15,7 @@ loop do
     LabManager.logger.info "Provider #{provider.inspect} scheduling " \
       "machines ids=#{schedule_computes.pluck(:id)}" unless schedule_computes.empty?
 
-    schedule_computes.each do |compute|
-      compute.schedule_create_vm!
-    end
+    schedule_computes.each(&:schedule_create_vm!)
   end
 
   sleep LabManager.config.scheduler.sleep_time

@@ -5,7 +5,7 @@ module LabManager
     module Endpoints
       # handles all endpoints related to Computes
       class Compute < Base
-        REBOOT_TYPES = %w(soft hard managed)
+        REBOOT_TYPES = %w(soft hard managed).freeze
 
         get '/' do
           # state = params[:state]

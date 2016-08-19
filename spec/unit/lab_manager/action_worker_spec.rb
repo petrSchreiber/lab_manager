@@ -73,7 +73,7 @@ describe LabManager::ActionWorker do
     it 'ends up in errored state if provider throws an exception' do
       compute.enqueue!
       action = compute.actions.create!(command: :create_vm)
-      allow_any_instance_of(::Compute).to receive(:create_vm) { fail 'foo' }
+      allow_any_instance_of(::Compute).to receive(:create_vm) { raise 'foo' }
       action_worker.perform(action.id)
       action.reload
       expect(action.state).to eq 'failed'
@@ -125,7 +125,7 @@ describe LabManager::ActionWorker do
     end
 
     it 'calls take_snapshot_vm on compute object' do
-      expect_any_instance_of(::Compute).to receive(:take_snapshot_vm) { fail 'foo' }
+      expect_any_instance_of(::Compute).to receive(:take_snapshot_vm) { raise 'foo' }
       compute.enqueue!
       action_worker.perform(action.id)
       expect(action.reload.state).to eq 'failed'
@@ -180,7 +180,7 @@ describe LabManager::ActionWorker do
 
     it 'calls revert_snapshot_vm on compute object' do
       allow_any_instance_of(::Compute).to receive(:vm_state) { :power_on }
-      expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) { fail 'foo' }
+      expect_any_instance_of(::Compute).to receive(:revert_snapshot_vm) { raise 'foo' }
       compute.enqueue!
       compute.provisioning!
       compute.run!

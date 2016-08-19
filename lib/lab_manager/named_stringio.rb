@@ -1,4 +1,4 @@
-
+# Class storing the original file name
 class NamedStringIO < StringIO
   def initialize(*args)
     super(*args[1..-1])
@@ -9,5 +9,3 @@ class NamedStringIO < StringIO
     @filename
   end
 end
-
-

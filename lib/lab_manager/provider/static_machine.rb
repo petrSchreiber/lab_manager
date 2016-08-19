@@ -34,7 +34,7 @@ module Provider
     def create_vm(_machine)
       machine_config = StaticMachineConfig.machines[compute.name]
       unless machine_config
-        fail NotFound, "Static machine name=#{compute.name.inspect} " \
+        raise NotFound, "Static machine name=#{compute.name.inspect} " \
           "asked for compute id=#{compute.id} does not exists"
       end
 
@@ -44,7 +44,7 @@ module Provider
                     .where(name: compute.name)
       # .where('computes.id <> ?', self.compute.id)
 
-      fail MachineInUse, "Machine id=#{compute.id} " \
+      raise MachineInUse, "Machine id=#{compute.id} " \
         "name=#{compute.name.inspect} is occupyied by machine " \
         "ids=#{occupied_by.pluck(:id).inspect}" if occupied_by.present?
     end

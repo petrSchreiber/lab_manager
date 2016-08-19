@@ -26,9 +26,9 @@ class Compute < ActiveRecord::Base
   # state `terminating` is also alive (e.g. it is counted to the occupied resources)
   ALIVE_STATES = %w(created queued provisioning running rebooting shutting_down
                     powered_off powering_on suspending suspended resuming
-                    reverting terminating)
+                    reverting terminating).freeze
   ALIVE_VM_STATES = ALIVE_STATES - %w(created)
-  DEAD_STATES = %w(terminated errored)
+  DEAD_STATES = %w(terminated errored).freeze
   ACTION_PENDING_STATES = ALIVE_STATES - %w(running stopped powered_off)
 
   has_many :actions, dependent: :destroy, inverse_of: :compute
@@ -36,11 +36,12 @@ class Compute < ActiveRecord::Base
   has_many :snapshots, -> { order :id }, dependent: :destroy, inverse_of: :compute
 
   validates :image, :provider, presence: true
-  validates :state, inclusion: { in: (%w(
+  validates :state, inclusion: { in: %w(
     created provisioning running rebooting
     shutting_down powered_off powering_on
     suspending suspended resuming reverting
-    terminating terminated errored queued)) }
+    terminating terminated errored queued
+  ) }
 
   serialize :create_vm_options, JSON
   serialize :provider_data, JSON
@@ -97,11 +98,12 @@ class Compute < ActiveRecord::Base
     event :resume        do transitions from: :suspended,      to: :resuming      end
     event :resumed       do transitions from: :resuming,       to: :running       end
 
-    event :revert        do transitions from: :running,        to: :reverting
-                            transitions from: :powered_off,    to: :reverting     end
+    event :revert        do
+      transitions from: :running,        to: :reverting
+      transitions from: :powered_off,    to: :reverting
+    end
     event :reverted_run  do transitions from: :reverting,      to: :running       end
     event :reverted_off  do transitions from: :reverting,      to: :powered_off   end
-
 
     event :take_snapshot do
       transitions from: :running, to: :running
@@ -146,7 +148,7 @@ class Compute < ActiveRecord::Base
   end
 
   def destroy
-    fail CannotDeleteAliveVM, "Cannot delete compute #{id} " \
+    raise CannotDeleteAliveVM, "Cannot delete compute #{id} " \
       'when virtual machine is alive' if alive_vm?
     super
   end

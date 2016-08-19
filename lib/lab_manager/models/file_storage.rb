@@ -7,7 +7,6 @@
 #  file      :string
 #
 
-
 require 'lab_manager/models/action'
 require 'carrierwave'
 

@@ -50,7 +50,7 @@ module LabManager
         when 'terminate_vm'
           terminate_vm
         else
-          fail UnknownAction, "action with \'id\'=#{action_id}" \
+          raise UnknownAction, "action with \'id\'=#{action_id}" \
             " has unknown \'command\': #{action.command.inspect}"
         end
       end
@@ -137,7 +137,7 @@ module LabManager
     end
 
     def execute_vm
-      fail 'Compute has to be in running state' unless compute.state == 'running'
+      raise 'Compute has to be in running state' unless compute.state == 'running'
       action.action_data = compute.execute_vm(action.payload)
       compute.save!
       action.succeeded!
@@ -148,7 +148,7 @@ module LabManager
     end
 
     def upload_file_vm
-      fail 'Compute has to be in running state' unless compute.state == 'running'
+      raise 'Compute has to be in running state' unless compute.state == 'running'
       action.action_data = compute.upload_file_vm(
         action.payload.merge(host_file: action.file_storage.file)
       )
@@ -161,7 +161,7 @@ module LabManager
     end
 
     def download_file_vm
-      fail 'Compute has to be in running state' unless compute.state == 'running'
+      raise 'Compute has to be in running state' unless compute.state == 'running'
       action.build_file_storage
       action.file_storage.file = compute.download_file_vm(action.payload)
       action.save!
@@ -174,10 +174,10 @@ module LabManager
     end
 
     def take_snapshot_vm
-      fail 'Wrong action payload' unless action.payload
-      fail 'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
+      raise 'Wrong action payload' unless action.payload
+      raise 'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
       snapshot = compute.snapshots.find(action.payload[:snapshot_id])
-      fail 'Snapshot already created' if snapshot.provider_ref
+      raise 'Snapshot already created' if snapshot.provider_ref
       # lock snapshot is not needed, because action is already locked
       # (snapshot.with_lock('FOR UPDATE'))
       snapshot.provider_data = compute.take_snapshot_vm(action.payload)
@@ -193,9 +193,9 @@ module LabManager
     def revert_snapshot_vm
       lock { compute.revert! }
       begin
-        fail ArgumentError, 'Wrong action payload' unless action.payload
-        fail ArgumentError,
-             'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
+        raise ArgumentError, 'Wrong action payload' unless action.payload
+        raise ArgumentError,
+              'Wrong action payload, no snapshot_id given' unless action.payload.key?(:snapshot_id)
         snapshot = compute.snapshots.find(action.payload[:snapshot_id])
         # we suppose, that revert process should be fully finished before performing
         # some actions such as restart, shutdown, reboot, power_off etc.
@@ -219,10 +219,10 @@ module LabManager
     end
 
     def processes_vm
-      fail 'Compute has to be in running state' unless compute.state == 'running'
-      fail 'Wrong action payload' unless Hash === action.payload
-      fail 'Wrong action payload, no user provided' unless action.payload.has_key?(:user)
-      fail 'Wrong action payload, no password provided' unless action.payload.has_key?(:password)
+      raise 'Compute has to be in running state' unless compute.state == 'running'
+      raise 'Wrong action payload' unless Hash.casecmp(action.payload) == 0
+      raise 'Wrong action payload, no user provided' unless action.payload.key?(:user)
+      raise 'Wrong action payload, no password provided' unless action.payload.key?(:password)
       processes = compute.guest_processes
       action.payload = processes
       action.save!
@@ -240,7 +240,7 @@ module LabManager
     def lock(previous_state = nil)
       compute.with_lock('FOR UPDATE') do
         if previous_state && (previous_state.to_s != compute.state)
-          fail StateChanged, 'state has changed to ' \
+          raise StateChanged, 'state has changed to ' \
             " #{compute.state.inspect}, expected #{previous_state.inspect}"
         end
         yield

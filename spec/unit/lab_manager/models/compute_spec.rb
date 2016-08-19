@@ -71,7 +71,7 @@ describe Compute do
       end
 
       it 'calls provider#set_provider_data otherwise' do
-        expect(fake_provider).to receive(:set_provider_data) { fail 'foo' }
+        expect(fake_provider).to receive(:set_provider_data) { raise 'foo' }
         expect { compute.reload_provider_data }.to raise_error 'foo'
       end
 

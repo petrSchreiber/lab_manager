@@ -11,6 +11,7 @@
 #  updated_at    :datetime         not null
 #
 
+# Model for snapshot storage
 class Snapshot < ActiveRecord::Base
   belongs_to :compute, inverse_of: :snapshots
 

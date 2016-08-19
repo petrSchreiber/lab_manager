@@ -22,9 +22,9 @@ require 'carrierwave/orm/activerecord'
 
 # Action model, it is used as the store of actions which were dispatched to a compute
 class Action < ActiveRecord::Base
-  DONE_STATES = %w(success failed)
-  TODO_STATES = %(queued)
-  FAIL_STATES = %(failed)
+  DONE_STATES = %w(success failed).freeze
+  TODO_STATES = %(queued).freeze
+  FAIL_STATES = %(failed).freeze
 
   belongs_to :compute, inverse_of: :actions
 
