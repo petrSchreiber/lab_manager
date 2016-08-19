@@ -22,34 +22,12 @@ module LabManager
         action.pending!
         return unless check_compute_state
 
-        case action.command # measurement of stop.action before and after this case
-        when 'create_vm'
-          create_vm
-        when 'suspend_vm'
-        when 'shutdown_vm'
-          shutdown_vm
-        when 'reboot_vm'
-          reboot_vm
-        when 'revert_snapshot_vm'
-          revert_snapshot_vm
-        when 'resume_vm'
-        when 'poweron_vm'
-          poweron_vm
-        when 'processes_vm'
-          processes_vm
-        when 'take_snapshot_vm'
-          take_snapshot_vm
-        when 'upload_file_vm'
-          upload_file_vm
-        when 'download_file_vm'
-          download_file_vm
-        when 'execute_vm'
-          execute_vm
-        when 'execute_vm'
-          execute_vm
-        when 'terminate_vm'
-          terminate_vm
-        else
+        method_name = action.command
+        method_name = 'shutdown_vm' if method_name == 'suspend_vm'
+        method_name = 'poweron_vm' if method_name == 'resume_vm'
+        begin
+          send(method_name)
+        rescue
           raise UnknownAction, "action with \'id\'=#{action_id}" \
             " has unknown \'command\': #{action.command.inspect}"
         end
