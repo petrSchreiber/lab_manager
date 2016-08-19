@@ -12,7 +12,8 @@ describe Provider::VSphere do
       template_path: 'aoo/boo/coo',
       dest_folder: 'zoo/xoo/coo',
       cluster: 'kokoko',
-      power_on: true
+      power_on: true,
+      vm_clone_retry_count: 1
     }
   end
 
